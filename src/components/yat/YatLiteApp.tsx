@@ -20,7 +20,7 @@ export function YatLiteApp({
   if (!role) return <RoleSelect onSelect={onSelectRole} onHome={onHome} />;
 
   if (role === "controlled") {
-    return <ControlledIntro onHome={onHome} onChangeRole={() => onSelectRole(null)} />;
+    return <ControlledApp onHome={onHome} onChangeRole={() => onSelectRole(null)} />;
   }
 
   if (loading) {
