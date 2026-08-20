@@ -39,7 +39,11 @@ type ControlledValue = {
   requestOpenApp: (appKey: string) => Promise<{ blocked: boolean; appName: string | null }>;
   closeApp: () => Promise<void>;
   visitSite: (url: string, title: string, domain: string, risk: string) => Promise<void>;
+  /** Active time-limit warning (60s grace) for the app currently open. */
+  warning: { ruleId: string; appName: string; secondsLeft: number } | null;
 };
+
+const GRACE_SECONDS = 60;
 
 const ControlledContext = createContext<ControlledValue | null>(null);
 
@@ -89,15 +93,17 @@ export function ControlledProvider({ children }: { children: ReactNode }) {
 
   // Heartbeat + light polling while paired (the anon device cannot use
   // postgres_changes, so a guardian broadcast + short poll keeps it live).
+  const warnedAt = state?.rules?.find((r) => r.status === "pending" && r.warned_at)?.warned_at;
+
   useEffect(() => {
     if (!token) return;
-    const poll = window.setInterval(() => void refresh(), POLL_MS);
+    const poll = window.setInterval(() => void refresh(), warnedAt ? 1000 : POLL_MS);
     const beat = window.setInterval(() => void refresh(), HEARTBEAT_MS);
     return () => {
       window.clearInterval(poll);
       window.clearInterval(beat);
     };
-  }, [token, refresh]);
+  }, [token, refresh, warnedAt]);
 
   // Instant nudges from the guardian (block/unblock, new rule, delete).
   const deviceId = state?.device.id ?? null;
@@ -184,6 +190,27 @@ export function ControlledProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!warnedAt) return;
+    const id = window.setInterval(() => setTick((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [warnedAt]);
+
+  const warning = useMemo(() => {
+    const rule = state?.rules?.find((r) => r.status === "pending" && r.warned_at);
+    if (!rule?.warned_at) return null;
+    const elapsed = (Date.now() - new Date(rule.warned_at).getTime()) / 1000;
+    return {
+      ruleId: rule.id,
+      appName: rule.app_name,
+      secondsLeft: Math.max(0, Math.ceil(GRACE_SECONDS - elapsed)),
+    };
+    // `tick` intentionally re-runs the countdown every second.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, warnedAt, tick]);
+
+
   const value = useMemo<ControlledValue>(
     () => ({
       ready,
@@ -199,8 +226,10 @@ export function ControlledProvider({ children }: { children: ReactNode }) {
       requestOpenApp,
       closeApp,
       visitSite,
+      warning,
     }),
     [
+      warning,
       ready,
       token,
       state,

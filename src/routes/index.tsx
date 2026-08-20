@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { PhoneShell } from "@/components/phone/PhoneShell";
 import { HomeScreen } from "@/components/phone/HomeScreen";
 import { SimulatedApp } from "@/components/phone/SimulatedApp";
 import { BlockScreen } from "@/components/phone/BlockScreen";
+import { PhonePopup, type PhonePopupTone } from "@/components/phone/PhonePopup";
 import { RecentsScreen } from "@/components/phone/RecentsScreen";
 import { ChromeApp, type DemoSite } from "@/components/phone/ChromeApp";
 import { YatLiteApp } from "@/components/yat/YatLiteApp";
@@ -59,6 +60,40 @@ function PhoneRuntime() {
   const [recents, setRecents] = useState<string[]>([]);
   const [recentsOpen, setRecentsOpen] = useState(false);
   const controlled = useControlled();
+  const [popup, setPopup] = useState<{
+    id: string;
+    title: string;
+    message: string;
+    tone: PhonePopupTone;
+  } | null>(null);
+  const seenNotifications = useRef<Set<string> | null>(null);
+
+  // Pop-up animation for anything the device is notified about: time-limit
+  // warnings, blocks, risk detection, rewards.
+  useEffect(() => {
+    const list = controlled.state?.notifications ?? [];
+    if (seenNotifications.current === null) {
+      seenNotifications.current = new Set(list.map((n) => n.id));
+      return;
+    }
+    const fresh = list.filter((n) => !seenNotifications.current!.has(n.id));
+    if (fresh.length === 0) return;
+    fresh.forEach((n) => seenNotifications.current!.add(n.id));
+    const latest = fresh[0]!;
+    const tone: PhonePopupTone = latest.notification_type.startsWith("time_limit")
+      ? "warn"
+      : latest.notification_type === "risk" || latest.notification_type === "rule_fail"
+        ? "danger"
+        : "info";
+    setPopup({ id: latest.id, title: latest.title, message: latest.message, tone });
+  }, [controlled.state]);
+
+  // Auto-dismiss popups (the countdown popup manages itself).
+  useEffect(() => {
+    if (!popup) return;
+    const id = window.setTimeout(() => setPopup(null), 6000);
+    return () => window.clearTimeout(id);
+  }, [popup]);
 
   useEffect(() => {
     setRole(loadRole());
@@ -95,6 +130,15 @@ function PhoneRuntime() {
             result.appName ?? VIRTUAL_APPS.find((a) => a.id === appId)?.name ?? "This app",
           );
           return;
+        }
+        const app = controlled.state?.apps.find((a) => a.app_key === appId);
+        if (app && (app.risk_level === "high" || app.risk_level === "risky")) {
+          setPopup({
+            id: `risk-${appId}-${Date.now()}`,
+            title: "Risky app detected",
+            message: `${app.app_name} is high risk. Your Guardian has been notified.`,
+            tone: "danger",
+          });
         }
       } finally {
         setLaunching(null);
@@ -181,12 +225,31 @@ function PhoneRuntime() {
     return <SimulatedApp appId={foregroundApp} onHome={goHome} />;
   };
 
+  const warning = controlled.warning;
+
   return (
     <PhoneShell
       onBack={goBack}
       onHome={goHome}
       onRecents={() => setRecentsOpen((open) => !open)}
     >
+      {warning ? (
+        <PhonePopup
+          tone="warn"
+          title={`${warning.appName} time limit reached`}
+          message="This app will be blocked when the countdown ends."
+          countdown={warning.secondsLeft}
+        />
+      ) : (
+        popup && (
+          <PhonePopup
+            tone={popup.tone}
+            title={popup.title}
+            message={popup.message}
+            onDismiss={() => setPopup(null)}
+          />
+        )
+      )}
       {content()}
     </PhoneShell>
   );
