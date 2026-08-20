@@ -82,6 +82,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "Yat Lite" },
       { property: "og:title", content: "Yat Lite" },
       { property: "og:description", content: "Yat Lite virtual phone — Guardian and Controlled Device simulator." },
+      { property: "og:type", content: "website" },
 
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
