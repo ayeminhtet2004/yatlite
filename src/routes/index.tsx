@@ -131,6 +131,15 @@ function PhoneRuntime() {
           );
           return;
         }
+        const app = controlled.state?.apps.find((a) => a.app_key === appId);
+        if (app && (app.risk_level === "high" || app.risk_level === "risky")) {
+          setPopup({
+            id: `risk-${appId}-${Date.now()}`,
+            title: "Risky app detected",
+            message: `${app.app_name} is high risk. Your Guardian has been notified.`,
+            tone: "danger",
+          });
+        }
       } finally {
         setLaunching(null);
       }
