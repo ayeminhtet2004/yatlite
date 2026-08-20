@@ -1,9 +1,23 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { GuardianDevices } from "./GuardianDevices";
 import { GuardianPair } from "./GuardianPair";
-
+import { GuardianActivity } from "./GuardianActivity";
+import { GuardianApps } from "./GuardianApps";
+import { GuardianRules } from "./GuardianRules";
+import { GuardianNotifications } from "./GuardianNotifications";
+import { GuardianRewards } from "./GuardianRewards";
+import { GuardianSubscription } from "./GuardianSubscription";
+import { DeviceSelector } from "./DeviceSelector";
+import {
+  fetchDevices,
+  fetchGuardianNotifications,
+  fetchSubscription,
+  isPremiumActive,
+  type DeviceRow,
+  type SubscriptionRow,
+} from "@/lib/yatApi";
 
 const NAV = [
   { id: "home", label: "Home", glyph: "⌂" },
@@ -13,11 +27,21 @@ const NAV = [
   { id: "rules", label: "Rules", glyph: "☑" },
 ];
 
+type Overlay = "notifications" | "rewards" | "subscription" | null;
+
 export function GuardianHome({ onHome }: { onHome: () => void }) {
   const { user, signOut } = useAuth();
   const [fullName, setFullName] = useState("");
   const [tab, setTab] = useState("home");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [overlay, setOverlay] = useState<Overlay>(null);
+  const [devices, setDevices] = useState<DeviceRow[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
+  const [unread, setUnread] = useState(0);
+
+  const guardianId = user?.id ?? null;
+  const premium = isPremiumActive(subscription);
 
   useEffect(() => {
     let active = true;
@@ -36,19 +60,97 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
     };
   }, [user]);
 
+  const loadDevices = useCallback(async () => {
+    if (!guardianId) return;
+    try {
+      const list = await fetchDevices(guardianId);
+      setDevices(list);
+      setSelectedId((current) =>
+        current && list.some((d) => d.id === current) ? current : (list[0]?.id ?? null),
+      );
+    } catch (e) {
+      console.error("[guardian] devices load", e);
+    }
+  }, [guardianId]);
+
+  const loadUnread = useCallback(async () => {
+    if (!guardianId) return;
+    try {
+      const items = await fetchGuardianNotifications(guardianId);
+      setUnread(items.filter((n) => !n.is_read).length);
+    } catch (e) {
+      console.error("[guardian] notifications load", e);
+    }
+  }, [guardianId]);
+
+  useEffect(() => {
+    if (!guardianId) return;
+    void loadDevices();
+    void loadUnread();
+    void fetchSubscription(guardianId).then(setSubscription).catch(console.error);
+
+    const channel = supabase
+      .channel(`guardian-${guardianId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "devices",
+          filter: `guardian_id=eq.${guardianId}`,
+        },
+        () => void loadDevices(),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `guardian_id=eq.${guardianId}`,
+        },
+        () => void loadUnread(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [guardianId, loadDevices, loadUnread]);
+
   const initial = (fullName || user?.email || "G").charAt(0).toUpperCase();
+  const selectedDevice = devices.find((d) => d.id === selectedId) ?? null;
+  const needsDevice = (
+    <p className="rounded-2xl border border-dashed border-border bg-card px-5 py-10 text-center text-[13px] text-muted-foreground">
+      Pair a controlled device first to use this screen.
+    </p>
+  );
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <header className="flex shrink-0 items-center justify-between px-5 pb-3 pt-2">
         <h1 className="text-[20px] font-semibold tracking-tight text-foreground">Yat Lite !</h1>
         <div className="flex items-center gap-3 text-muted-foreground">
-          <span className="text-lg" aria-hidden>
+          <button
+            type="button"
+            aria-label="Reward history"
+            onClick={() => setOverlay(overlay === "rewards" ? null : "rewards")}
+            className="text-lg"
+          >
             🎁
-          </span>
-          <span className="text-lg" aria-hidden>
+          </button>
+          <button
+            type="button"
+            aria-label="Notifications"
+            onClick={() => setOverlay(overlay === "notifications" ? null : "notifications")}
+            className="relative text-lg"
+          >
             🔔
-          </span>
+            {unread > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+                {unread}
+              </span>
+            )}
+          </button>
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
@@ -65,8 +167,18 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
           <p className="text-[13px] text-muted-foreground">{user?.email}</p>
           <button
             type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              setOverlay("subscription");
+            }}
+            className="mt-3 h-11 w-full rounded-xl border border-border text-[14px] font-semibold text-primary"
+          >
+            Subscription{premium ? " · Premium" : ""}
+          </button>
+          <button
+            type="button"
             onClick={() => void signOut()}
-            className="mt-3 h-11 w-full rounded-xl border border-border text-[14px] font-semibold text-destructive"
+            className="mt-2 h-11 w-full rounded-xl border border-border text-[14px] font-semibold text-destructive"
           >
             Logout
           </button>
@@ -74,23 +186,87 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
       )}
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
-        {tab === "home" && user && (
-          <GuardianDevices guardianId={user.id} onPair={() => setTab("pair")} />
+        {overlay === "notifications" && guardianId && (
+          <GuardianNotifications guardianId={guardianId} onClose={() => setOverlay(null)} />
         )}
 
-        {tab === "pair" && user && (
-          <GuardianPair guardianId={user.id} onPaired={() => setTab("home")} />
+        {overlay === "rewards" &&
+          (selectedDevice ? (
+            <GuardianRewards
+              deviceId={selectedDevice.id}
+              deviceName={selectedDevice.device_name}
+              onClose={() => setOverlay(null)}
+            />
+          ) : (
+            needsDevice
+          ))}
+
+        {overlay === "subscription" && guardianId && (
+          <GuardianSubscription
+            guardianId={guardianId}
+            subscription={subscription}
+            onChanged={setSubscription}
+            onClose={() => setOverlay(null)}
+          />
         )}
 
-        {tab !== "home" && tab !== "pair" && (
-          <div className="rounded-2xl border border-dashed border-border bg-card px-5 py-10 text-center">
-            <p className="text-[15px] font-semibold text-card-foreground">Coming next</p>
-            <p className="mt-1.5 text-[13px] text-muted-foreground">
-              {NAV.find((item) => item.id === tab)?.label} is part of the next build phase.
-            </p>
-          </div>
-        )}
+        {overlay === null && (
+          <>
+            {tab !== "home" && tab !== "pair" && devices.length > 0 && (
+              <div className="mb-3">
+                <DeviceSelector
+                  devices={devices}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                />
+              </div>
+            )}
 
+            {tab === "home" && guardianId && (
+              <GuardianDevices guardianId={guardianId} onPair={() => setTab("pair")} />
+            )}
+
+            {tab === "pair" && guardianId && (
+              <GuardianPair
+                guardianId={guardianId}
+                onPaired={() => {
+                  setTab("home");
+                  void loadDevices();
+                }}
+                blocked={!premium && devices.length >= 1}
+                onUpgrade={() => setOverlay("subscription")}
+              />
+            )}
+
+            {tab === "activity" &&
+              (selectedDevice ? <GuardianActivity deviceId={selectedDevice.id} /> : needsDevice)}
+
+            {tab === "apps" &&
+              (selectedDevice && guardianId ? (
+                <GuardianApps
+                  guardianId={guardianId}
+                  deviceId={selectedDevice.id}
+                  deviceName={selectedDevice.device_name}
+                  premium={premium}
+                  onUpgrade={() => setOverlay("subscription")}
+                />
+              ) : (
+                needsDevice
+              ))}
+
+            {tab === "rules" &&
+              (selectedDevice && guardianId ? (
+                <GuardianRules
+                  guardianId={guardianId}
+                  deviceId={selectedDevice.id}
+                  premium={premium}
+                  onUpgrade={() => setOverlay("subscription")}
+                />
+              ) : (
+                needsDevice
+              ))}
+          </>
+        )}
 
         <button
           type="button"
@@ -107,7 +283,10 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
             <button
               key={item.id}
               type="button"
-              onClick={() => setTab(item.id)}
+              onClick={() => {
+                setOverlay(null);
+                setTab(item.id);
+              }}
               className="flex flex-col items-center gap-1"
             >
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">
@@ -119,7 +298,10 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
             <button
               key={item.id}
               type="button"
-              onClick={() => setTab(item.id)}
+              onClick={() => {
+                setOverlay(null);
+                setTab(item.id);
+              }}
               className="flex flex-col items-center gap-1 px-2 py-1"
             >
               <span className={tab === item.id ? "text-primary" : "text-muted-foreground"}>
