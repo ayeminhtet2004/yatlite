@@ -1,16 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  deviceHeartbeat,
-  normalizeCode,
-  pairDevice,
-  setDevicePermissions,
-  type DeviceState,
-} from "@/lib/yatApi";
-import { clearDeviceToken, ensureDeviceToken, loadDeviceToken } from "@/lib/yat";
-
-type Screen = "restoring" | "connect" | "success" | "permissions" | "dashboard";
-
-const HEARTBEAT_MS = 15000;
+import { useState } from "react";
+import { normalizeCode } from "@/lib/yatApi";
+import { useControlled } from "@/hooks/useControlled";
 
 export function ControlledApp({
   onHome,
@@ -19,83 +9,29 @@ export function ControlledApp({
   onHome: () => void;
   onChangeRole: () => void;
 }) {
-  const [screen, setScreen] = useState<Screen>("restoring");
-  const [state, setState] = useState<DeviceState | null>(null);
+  const ctl = useControlled();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [justPaired, setJustPaired] = useState(false);
   const [settingsPane, setSettingsPane] = useState<null | "usage" | "accessibility">(null);
-  const [disconnected, setDisconnected] = useState(false);
-  const tokenRef = useRef<string | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [granting, setGranting] = useState(false);
 
-  const goToConnect = useCallback((wasDisconnected: boolean) => {
-    clearDeviceToken();
-    tokenRef.current = null;
-    setState(null);
-    setDisconnected(wasDisconnected);
-    setScreen("connect");
-  }, []);
-
-  // Restore this browser's controlled identity from Supabase.
-  useEffect(() => {
-    const token = loadDeviceToken();
-    tokenRef.current = token;
-    if (!token) {
-      setScreen("connect");
-      return;
-    }
-    void (async () => {
-      try {
-        const next = await deviceHeartbeat(token);
-        if (!next) {
-          goToConnect(true);
-          return;
-        }
-        setState(next);
-        const perms = next.permissions;
-        setScreen(
-          perms?.usage_access_enabled && perms?.accessibility_enabled ? "dashboard" : "permissions",
-        );
-      } catch (e) {
-        console.error("[controlled] restore failed", e);
-        setScreen("connect");
-      }
-    })();
-  }, [goToConnect]);
-
-  // Heartbeat + disconnect detection while the device is active.
-  useEffect(() => {
-    if (screen !== "dashboard" && screen !== "permissions") return;
-    const id = window.setInterval(async () => {
-      const token = tokenRef.current;
-      if (!token) return;
-      try {
-        const next = await deviceHeartbeat(token);
-        if (!next) {
-          goToConnect(true);
-          return;
-        }
-        setState(next);
-      } catch (e) {
-        console.error("[controlled] heartbeat failed", e);
-      }
-    }, HEARTBEAT_MS);
-    return () => window.clearInterval(id);
-  }, [screen, goToConnect]);
+  const state = ctl.state;
+  const perms = state?.permissions ?? null;
+  const usage = Boolean(perms?.usage_access_enabled);
+  const accessibility = Boolean(perms?.accessibility_enabled);
+  const notifications = state?.notifications ?? [];
+  const unread = notifications.filter((n) => !n.is_read).length;
 
   async function connect() {
     setBusy(true);
     setError(null);
-    setDisconnected(false);
     try {
-      const token = ensureDeviceToken();
-      tokenRef.current = token;
-      const next = await pairDevice(code, token);
-      setState(next);
-      setScreen("success");
+      await ctl.pair(code);
+      setJustPaired(true);
     } catch (e) {
-      clearDeviceToken();
-      tokenRef.current = null;
       setError(e instanceof Error ? e.message : "Pairing failed.");
     } finally {
       setBusy(false);
@@ -103,21 +39,24 @@ export function ControlledApp({
   }
 
   async function grant(kind: "usage" | "accessibility") {
-    const token = tokenRef.current;
-    if (!token) return;
-    const perms = state?.permissions;
-    const next = await setDevicePermissions(
-      token,
-      kind === "usage" ? true : Boolean(perms?.usage_access_enabled),
-      kind === "accessibility" ? true : Boolean(perms?.accessibility_enabled),
-    );
-    if (next) setState(next);
-    setSettingsPane(null);
+    if (granting) return;
+    setGranting(true);
+    try {
+      await ctl.grantPermissions(
+        kind === "usage" ? true : usage,
+        kind === "accessibility" ? true : accessibility,
+      );
+      setSettingsPane(null);
+    } catch (e) {
+      console.error("[controlled] grant failed", e);
+    } finally {
+      setGranting(false);
+    }
   }
 
   /* ------------------------------------------------------------ screens */
 
-  if (screen === "restoring") {
+  if (!ctl.ready) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <p className="text-sm text-muted-foreground">Restoring device…</p>
@@ -125,7 +64,7 @@ export function ControlledApp({
     );
   }
 
-  if (screen === "success" && state) {
+  if (ctl.paired && state && justPaired) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
         <div className="flex h-20 w-20 animate-[pulse_1.2s_ease-in-out_2] items-center justify-center rounded-full bg-primary text-3xl text-primary-foreground">
@@ -137,7 +76,7 @@ export function ControlledApp({
         </p>
         <button
           type="button"
-          onClick={() => setScreen("permissions")}
+          onClick={() => setJustPaired(false)}
           className="mt-8 h-14 w-full rounded-2xl bg-primary text-[15px] font-semibold text-primary-foreground"
         >
           Continue
@@ -146,12 +85,7 @@ export function ControlledApp({
     );
   }
 
-  if (screen === "permissions" && state) {
-    const perms = state.permissions;
-    const usage = Boolean(perms?.usage_access_enabled);
-    const accessibility = Boolean(perms?.accessibility_enabled);
-    const ready = usage && accessibility;
-
+  if (ctl.paired && state && !(usage && accessibility)) {
     if (settingsPane) {
       const isUsage = settingsPane === "usage";
       return (
@@ -172,10 +106,11 @@ export function ControlledApp({
               </p>
               <button
                 type="button"
+                disabled={granting}
                 onClick={() => void grant(settingsPane)}
-                className="mt-4 h-12 w-full rounded-2xl bg-primary text-[14px] font-semibold text-primary-foreground"
+                className="mt-4 h-12 w-full rounded-2xl bg-primary text-[14px] font-semibold text-primary-foreground disabled:opacity-60"
               >
-                {isUsage ? "Allow" : "Turn on"}
+                {granting ? "Applying…" : isUsage ? "Allow" : "Turn on"}
               </button>
             </div>
             <button
@@ -232,38 +167,167 @@ export function ControlledApp({
         >
           Enable Yat Lite Accessibility
         </button>
-
-        <button
-          type="button"
-          disabled={!ready}
-          onClick={() => setScreen("dashboard")}
-          className="mt-8 h-14 w-full rounded-2xl bg-primary text-[15px] font-semibold text-primary-foreground disabled:opacity-50"
-        >
-          Continue
-        </button>
       </div>
     );
   }
 
-  if (screen === "dashboard" && state) {
+  if (ctl.paired && state) {
+    if (showNotifications) {
+      return (
+        <div className="flex flex-1 flex-col overflow-y-auto px-6 pb-8 pt-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-[20px] font-semibold text-foreground">Notifications</h1>
+            <button
+              type="button"
+              onClick={() => setShowNotifications(false)}
+              className="text-[13px] font-medium text-primary"
+            >
+              Close
+            </button>
+          </div>
+          <button
+            type="button"
+            disabled={unread === 0}
+            onClick={() => void ctl.markRead()}
+            className="mt-3 h-10 w-full rounded-2xl border border-border text-[13px] font-semibold text-primary disabled:opacity-50"
+          >
+            Mark All Read
+          </button>
+          <div className="mt-3 space-y-2">
+            {notifications.length === 0 && (
+              <p className="py-8 text-center text-[13px] text-muted-foreground">
+                No notifications yet.
+              </p>
+            )}
+            {notifications.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => !item.is_read && void ctl.markRead(item.id)}
+                className={`block w-full rounded-2xl border px-4 py-3 text-left ${
+                  item.is_read ? "border-border bg-card" : "border-primary/30 bg-primary/5"
+                }`}
+              >
+                <p className="text-[14px] font-semibold text-card-foreground">{item.title}</p>
+                <p className="text-[12px] text-muted-foreground">{item.message}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {new Date(item.created_at).toLocaleString()}
+                </p>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    const rules = state.rules ?? [];
+    const activeGoals = rules.filter((r) => r.status === "pending");
+
     return (
       <div className="flex flex-1 flex-col overflow-y-auto px-6 pb-8 pt-4">
-        <p className="text-[12px] uppercase tracking-wide text-muted-foreground">
-          Controlled Device
-        </p>
-        <h1 className="text-[22px] font-semibold text-foreground">{state.device.device_name}</h1>
-        <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground">
-          <span className="h-2 w-2 rounded-full bg-primary" />
-          Connected · monitoring active
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-[12px] uppercase tracking-wide text-muted-foreground">
+              Controlled Device
+            </p>
+            <h1 className="text-[22px] font-semibold text-foreground">
+              {state.device.device_name}
+            </h1>
+            <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              Connected · monitoring active
+            </p>
+          </div>
+          <button
+            type="button"
+            aria-label="Notifications"
+            onClick={() => setShowNotifications(true)}
+            className="relative text-lg"
+          >
+            🔔
+            {unread > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+                {unread}
+              </span>
+            )}
+          </button>
+        </div>
 
-        <div className="mt-6 rounded-2xl border border-border bg-card p-4">
+        <div className="mt-5 rounded-2xl bg-primary px-4 py-4 text-primary-foreground">
+          <p className="text-[12px] opacity-80">Total Points</p>
+          <p className="text-[30px] font-semibold">{state.points ?? 0}</p>
+        </div>
+
+        <div className="mt-5">
+          <p className="text-[14px] font-semibold text-foreground">Active Goals</p>
+          <div className="mt-2 space-y-2">
+            {rules.length === 0 && (
+              <p className="rounded-2xl border border-dashed border-border bg-card px-4 py-5 text-center text-[13px] text-muted-foreground">
+                No goals from your Guardian yet.
+              </p>
+            )}
+            {rules.map((rule) => (
+              <div key={rule.id} className="rounded-2xl border border-border bg-card px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[14px] font-semibold text-card-foreground">{rule.app_name}</p>
+                  <span
+                    className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold capitalize ${
+                      rule.status === "success"
+                        ? "bg-primary/10 text-primary"
+                        : rule.status === "fail"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-secondary text-muted-foreground"
+                    }`}
+                  >
+                    {rule.status}
+                  </span>
+                </div>
+                <p className="text-[12px] text-muted-foreground">
+                  {rule.rule_type === "schedule"
+                    ? `Time limit ${rule.duration_minutes ?? 0} min · used ${Math.floor(
+                        rule.accumulated_seconds / 60,
+                      )} min`
+                    : `Avoid until ${rule.end_date ?? "—"}`}
+                </p>
+                <p className="mt-1 text-[12px] font-semibold text-primary">
+                  {rule.reward_points} points
+                </p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            {activeGoals.length} goal{activeGoals.length === 1 ? "" : "s"} in progress
+          </p>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-border bg-card p-4">
+          <p className="text-[14px] font-semibold text-card-foreground">Privacy & Monitoring</p>
+          <div className="mt-2 space-y-1.5 text-[13px]">
+            {[
+              { label: "Risky apps & websites", on: true },
+              { label: "Recent app activity", on: Boolean(perms?.recent_apps) },
+              { label: "Visited websites", on: Boolean(perms?.visited_websites) },
+              { label: "Installed apps", on: Boolean(perms?.installed_apps) },
+            ].map((row) => (
+              <div key={row.label} className="flex items-center justify-between">
+                <span className="text-muted-foreground">{row.label}</span>
+                <span className={row.on ? "font-semibold text-primary" : "text-muted-foreground"}>
+                  {row.on ? "Shared" : "Private"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-border bg-card p-4">
           <p className="text-[14px] font-semibold text-card-foreground">Monitored apps</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             {state.apps.map((app) => (
               <div key={app.id} className="rounded-xl bg-secondary px-3 py-2">
                 <p className="text-[13px] font-medium text-foreground">{app.app_name}</p>
-                <p className="text-[11px] text-muted-foreground">{app.risk_level}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  {app.blocked ? "Blocked" : app.risk_level}
+                </p>
               </div>
             ))}
           </div>
@@ -272,7 +336,7 @@ export function ControlledApp({
         <button
           type="button"
           onClick={() => {
-            goToConnect(false);
+            ctl.disconnect();
             onChangeRole();
           }}
           className="mt-6 h-14 w-full rounded-2xl border border-destructive text-[15px] font-semibold text-destructive"
@@ -287,7 +351,6 @@ export function ControlledApp({
         >
           Close Yat Lite
         </button>
-
       </div>
     );
   }
@@ -306,7 +369,7 @@ export function ControlledApp({
         Enter the code shown on the Guardian's device.
       </p>
 
-      {disconnected && (
+      {ctl.disconnected && (
         <p className="mt-4 rounded-xl bg-secondary px-3 py-2 text-[13px] text-muted-foreground">
           This device was disconnected by its Guardian. Pair again to reconnect.
         </p>
