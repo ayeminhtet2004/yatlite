@@ -190,7 +190,7 @@ export function ControlledProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
   useEffect(() => {
     if (!warnedAt) return;
     const id = window.setInterval(() => setTick((n) => n + 1), 1000);
@@ -206,8 +206,10 @@ export function ControlledProvider({ children }: { children: ReactNode }) {
       appName: rule.app_name,
       secondsLeft: Math.max(0, Math.ceil(GRACE_SECONDS - elapsed)),
     };
+    // `tick` intentionally re-runs the countdown every second.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, warnedAt, /* re-evaluated by tick */ setTick]);
+  }, [state, warnedAt, tick]);
+
 
   const value = useMemo<ControlledValue>(
     () => ({
