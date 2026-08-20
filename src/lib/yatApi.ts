@@ -284,6 +284,7 @@ export type ControlledRule = {
   reward_points: number;
   status: "pending" | "success" | "fail";
   accumulated_seconds: number;
+  warned_at?: string | null;
   created_at: string;
 };
 
