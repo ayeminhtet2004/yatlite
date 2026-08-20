@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { GuardianDevices } from "./GuardianDevices";
@@ -10,11 +10,14 @@ import { GuardianNotifications } from "./GuardianNotifications";
 import { GuardianRewards } from "./GuardianRewards";
 import { GuardianSubscription } from "./GuardianSubscription";
 import { DeviceSelector } from "./DeviceSelector";
+import { PhonePopup, type PhonePopupTone } from "@/components/phone/PhonePopup";
 import {
   fetchDevices,
   fetchGuardianNotifications,
   fetchSubscription,
+  guardianEnforce,
   isPremiumActive,
+  type NotificationRow,
   type DeviceRow,
   type SubscriptionRow,
 } from "@/lib/yatApi";
@@ -39,6 +42,14 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionRow | null>(null);
   const [unread, setUnread] = useState(0);
+  // In-app realtime popup (never the OS Notifications API).
+  const [popup, setPopup] = useState<{
+    id: string;
+    title: string;
+    message: string;
+    tone: PhonePopupTone;
+  } | null>(null);
+  const seenPopups = useRef<Set<string>>(new Set());
 
   const guardianId = user?.id ?? null;
   const premium = isPremiumActive(subscription);
@@ -109,13 +120,44 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
           table: "notifications",
           filter: `guardian_id=eq.${guardianId}`,
         },
-        () => void loadUnread(),
+        (payload) => {
+          void loadUnread();
+          const row = payload.new as NotificationRow | undefined;
+          if (payload.eventType !== "INSERT" || !row) return;
+          if (row.recipient_type !== "guardian") return;
+          if (seenPopups.current.has(row.id)) return;
+          seenPopups.current.add(row.id);
+          const tone: PhonePopupTone = row.notification_type.startsWith("time_limit_warning")
+            ? "warn"
+            : row.notification_type === "risk" ||
+                row.notification_type === "rule_fail" ||
+                row.notification_type === "time_limit_block"
+              ? "danger"
+              : "info";
+          setPopup({ id: row.id, title: row.title, message: row.message, tone });
+        },
       )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [guardianId, loadDevices, loadUnread]);
+
+  useEffect(() => {
+    if (!popup) return;
+    const id = window.setTimeout(() => setPopup(null), 6000);
+    return () => window.clearTimeout(id);
+  }, [popup]);
+
+  // Backend-reliable enforcement: even with the controlled tab closed, the
+  // guardian client ticks the idempotent RPC so grace periods still expire.
+  useEffect(() => {
+    if (devices.length === 0) return;
+    const run = () => devices.forEach((d) => void guardianEnforce(d.id));
+    run();
+    const id = window.setInterval(run, 3000);
+    return () => window.clearInterval(id);
+  }, [devices]);
 
   const initial = (fullName || user?.email || "G").charAt(0).toUpperCase();
   const selectedDevice = devices.find((d) => d.id === selectedId) ?? null;
@@ -126,7 +168,15 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
   );
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="relative flex flex-1 flex-col overflow-hidden">
+      {popup && (
+        <PhonePopup
+          tone={popup.tone}
+          title={popup.title}
+          message={popup.message}
+          onDismiss={() => setPopup(null)}
+        />
+      )}
       <header className="flex shrink-0 items-center justify-between px-5 pb-3 pt-2">
         <h1 className="text-[20px] font-semibold tracking-tight text-foreground">Yat Lite !</h1>
         <div className="flex items-center gap-3 text-muted-foreground">
