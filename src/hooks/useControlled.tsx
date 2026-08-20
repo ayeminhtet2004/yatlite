@@ -197,23 +197,28 @@ export function ControlledProvider({ children }: { children: ReactNode }) {
 
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    if (!warnedAt) return;
+    if (!graceAt) return;
     const id = window.setInterval(() => setTick((n) => n + 1), 1000);
     return () => window.clearInterval(id);
-  }, [warnedAt]);
+  }, [graceAt]);
+
+  // Countdown is derived from the PERSISTED grace_expires_at (server clock),
+  // so a refresh mid-grace resumes at the correct remaining seconds.
+  const skewMs = state?.now ? new Date(state.now).getTime() - Date.now() : 0;
 
   const warning = useMemo(() => {
-    const rule = state?.rules?.find((r) => r.status === "pending" && r.warned_at);
-    if (!rule?.warned_at) return null;
-    const elapsed = (Date.now() - new Date(rule.warned_at).getTime()) / 1000;
+    const rule = state?.rules?.find((r) => r.status === "pending" && r.grace_expires_at);
+    if (!rule?.grace_expires_at) return null;
+    const left = (new Date(rule.grace_expires_at).getTime() - (Date.now() + skewMs)) / 1000;
     return {
       ruleId: rule.id,
       appName: rule.app_name,
-      secondsLeft: Math.max(0, Math.ceil(GRACE_SECONDS - elapsed)),
+      secondsLeft: Math.max(0, Math.min(GRACE_SECONDS, Math.ceil(left))),
     };
     // `tick` intentionally re-runs the countdown every second.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, warnedAt, tick]);
+  }, [state, graceAt, tick, skewMs]);
+
 
 
   const value = useMemo<ControlledValue>(
