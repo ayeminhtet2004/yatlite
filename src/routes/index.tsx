@@ -6,7 +6,7 @@ import { HomeScreen } from "@/components/phone/HomeScreen";
 import { SimulatedApp } from "@/components/phone/SimulatedApp";
 import { YatLiteApp } from "@/components/yat/YatLiteApp";
 import { AuthProvider } from "@/hooks/useAuth";
-import { loadRole, saveRole, type YatRole } from "@/lib/yat";
+import { loadRole, saveRole, loadScreen, saveScreen, clearScreen, type YatRole } from "@/lib/yat";
 
 const TITLE = "Yat Lite — Guardian & Controlled Device Simulator";
 const DESCRIPTION =
