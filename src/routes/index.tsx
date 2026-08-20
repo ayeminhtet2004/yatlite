@@ -29,10 +29,12 @@ function Index() {
   // onto the phone home screen while they're inside the Yat Lite app.
   const [foregroundApp, setForegroundApp] = useState<string | null>(null);
   const [role, setRole] = useState<YatRole | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setRole(loadRole());
     setForegroundApp(loadScreen());
+    setHydrated(true);
   }, []);
 
   function openApp(appId: string) {
@@ -55,12 +57,20 @@ function Index() {
   return (
     <AuthProvider>
       <PhoneShell>
-        {foregroundApp === null && <HomeScreen onOpenApp={openApp} />}
-        {foregroundApp === "yat_lite" && (
-          <YatLiteApp role={role} onSelectRole={selectRole} onHome={goHome} />
-        )}
-        {foregroundApp !== null && foregroundApp !== "yat_lite" && (
-          <SimulatedApp appId={foregroundApp} onHome={goHome} />
+        {!hydrated ? (
+          <div className="flex flex-1 items-center justify-center bg-background" aria-label="Loading Yat Lite">
+            <div className="h-8 w-8 animate-pulse rounded-lg bg-primary" />
+          </div>
+        ) : (
+          <>
+            {foregroundApp === null && <HomeScreen onOpenApp={openApp} />}
+            {foregroundApp === "yat_lite" && (
+              <YatLiteApp role={role} onSelectRole={selectRole} onHome={goHome} />
+            )}
+            {foregroundApp !== null && foregroundApp !== "yat_lite" && (
+              <SimulatedApp appId={foregroundApp} onHome={goHome} />
+            )}
+          </>
         )}
       </PhoneShell>
     </AuthProvider>
