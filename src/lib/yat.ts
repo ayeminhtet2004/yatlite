@@ -2,6 +2,30 @@ export type YatRole = "guardian" | "controlled";
 
 const ROLE_KEY = "yat.role";
 const SCREEN_KEY = "yat.screen";
+const DEVICE_TOKEN_KEY = "yat.deviceToken";
+
+/**
+ * Controlled-device identity. Random per browser, never a Guardian credential.
+ * Created lazily and kept until the device is disconnected.
+ */
+export function loadDeviceToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(DEVICE_TOKEN_KEY);
+}
+
+export function ensureDeviceToken(): string {
+  const existing = loadDeviceToken();
+  if (existing) return existing;
+  const token = `dev_${crypto.randomUUID()}`;
+  window.localStorage.setItem(DEVICE_TOKEN_KEY, token);
+  return token;
+}
+
+export function clearDeviceToken() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(DEVICE_TOKEN_KEY);
+}
+
 
 /** Role is DEVICE-LOCAL only — never synced to Supabase. */
 export function loadRole(): YatRole | null {
