@@ -31,11 +31,11 @@ export const DEMO_SITES: DemoSite[] = [
     blurb: "Headlines and world news.",
   },
   {
-    url: "https://casino-demo.example",
-    domain: "casino-demo.example",
-    title: "Casino Demo",
+    url: "https://lucky-spin-slots.example",
+    domain: "lucky-spin-slots.example",
+    title: "Lucky Spin Slots",
     risk: "risky",
-    blurb: "Gambling site — flagged as risky.",
+    blurb: "Online slot game site — flagged as risky.",
   },
 ];
 

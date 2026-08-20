@@ -136,7 +136,7 @@ function PhoneRuntime() {
           setPopup({
             id: `risk-${appId}-${Date.now()}`,
             title: "Risky app detected",
-            message: `${app.app_name} is high risk. Your Guardian has been notified.`,
+            message: `${app.app_name} is a slot game and has been flagged as risky. Your Guardian has been notified.`,
             tone: "danger",
           });
         }

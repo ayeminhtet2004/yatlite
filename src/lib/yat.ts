@@ -73,4 +73,5 @@ export const VIRTUAL_APPS: VirtualApp[] = [
   { id: "messages", name: "Messages", color: "#00C853", glyph: "✉" },
   { id: "camera", name: "Camera", color: "#4B5563", glyph: "◉" },
   { id: "settings", name: "Settings", color: "#6B7280", glyph: "⚙" },
+  { id: "lucky_slots", name: "Lucky Slots", color: "#B7791F", glyph: "🎰" },
 ];
