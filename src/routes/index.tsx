@@ -5,6 +5,7 @@ import { PhoneShell } from "@/components/phone/PhoneShell";
 import { HomeScreen } from "@/components/phone/HomeScreen";
 import { SimulatedApp } from "@/components/phone/SimulatedApp";
 import { BlockScreen } from "@/components/phone/BlockScreen";
+import { RecentsScreen } from "@/components/phone/RecentsScreen";
 import { ChromeApp, type DemoSite } from "@/components/phone/ChromeApp";
 import { YatLiteApp } from "@/components/yat/YatLiteApp";
 import { AuthProvider } from "@/hooks/useAuth";
