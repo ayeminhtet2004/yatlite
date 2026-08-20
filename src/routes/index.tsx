@@ -25,27 +25,44 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  // Restore the last open app + role so a refresh doesn't dump the user back
+  // onto the phone home screen while they're inside the Yat Lite app.
   const [foregroundApp, setForegroundApp] = useState<string | null>(null);
   const [role, setRole] = useState<YatRole | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setRole(loadRole());
+    setForegroundApp(loadScreen());
+    setHydrated(true);
   }, []);
+
+  function openApp(appId: string) {
+    saveScreen(appId);
+    setForegroundApp(appId);
+  }
+
+  function goHome() {
+    clearScreen();
+    setForegroundApp(null);
+  }
 
   function selectRole(next: YatRole | null) {
     saveRole(next);
     setRole(next);
+    // Leaving role selection returns to the phone home screen.
+    if (next === null) goHome();
   }
 
   return (
     <AuthProvider>
       <PhoneShell>
-        {foregroundApp === null && <HomeScreen onOpenApp={setForegroundApp} />}
+        {foregroundApp === null && <HomeScreen onOpenApp={openApp} />}
         {foregroundApp === "yat_lite" && (
-          <YatLiteApp role={role} onSelectRole={selectRole} onHome={() => setForegroundApp(null)} />
+          <YatLiteApp role={role} onSelectRole={selectRole} onHome={goHome} />
         )}
         {foregroundApp !== null && foregroundApp !== "yat_lite" && (
-          <SimulatedApp appId={foregroundApp} onHome={() => setForegroundApp(null)} />
+          <SimulatedApp appId={foregroundApp} onHome={goHome} />
         )}
       </PhoneShell>
     </AuthProvider>
