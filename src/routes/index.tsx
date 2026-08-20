@@ -29,12 +29,10 @@ function Index() {
   // onto the phone home screen while they're inside the Yat Lite app.
   const [foregroundApp, setForegroundApp] = useState<string | null>(null);
   const [role, setRole] = useState<YatRole | null>(null);
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setRole(loadRole());
     setForegroundApp(loadScreen());
-    setHydrated(true);
   }, []);
 
   function openApp(appId: string) {
