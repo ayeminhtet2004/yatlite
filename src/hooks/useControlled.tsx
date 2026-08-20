@@ -50,7 +50,15 @@ type ControlledValue = {
 
 const GRACE_SECONDS = 60;
 
-const ControlledContext = createContext<ControlledValue | null>(null);
+// Keep one context instance across hot reloads. Without this, a HMR update to
+// this module creates a fresh context while the mounted provider still uses the
+// old one, and consumers throw "must be used inside ControlledProvider".
+const globalScope = globalThis as typeof globalThis & {
+  __yatControlledContext?: React.Context<ControlledValue | null>;
+};
+const ControlledContext =
+  globalScope.__yatControlledContext ??
+  (globalScope.__yatControlledContext = createContext<ControlledValue | null>(null));
 
 export function ControlledProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
