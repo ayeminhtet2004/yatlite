@@ -129,3 +129,13 @@ end; $$;
 
 revoke execute on function public.yat_enforce_limits(uuid) from public, anon, authenticated;
 grant execute on function public.yat_heartbeat(text) to anon, authenticated;
+
+-- A finished time-limit rule now blocks ONLY through blocked_apps, so the
+-- Guardian can lift the block from the Apps screen.
+create or replace function public.yat_is_app_blocked(p_device_id uuid, p_app_id uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((
+    select b.blocked from public.blocked_apps b
+     where b.device_id = p_device_id and b.app_id = p_app_id
+  ), false);
+$$;
