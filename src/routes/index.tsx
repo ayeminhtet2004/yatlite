@@ -236,8 +236,8 @@ function PhoneRuntime() {
       {warning ? (
         <PhonePopup
           tone="warn"
-          title={`${warning.appName} time limit reached`}
-          message="This app will be blocked when the countdown ends."
+          title="Time Limit Reached"
+          message={`Your ${warning.limitMinutes ? `${warning.limitMinutes}-minute ` : ""}limit for ${warning.appName} has been reached. ${warning.appName} will be blocked in 60 seconds.`}
           countdown={warning.secondsLeft}
         />
       ) : (

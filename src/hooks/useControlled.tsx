@@ -40,7 +40,12 @@ type ControlledValue = {
   closeApp: () => Promise<void>;
   visitSite: (url: string, title: string, domain: string, risk: string) => Promise<void>;
   /** Active time-limit warning (60s grace) for the app currently open. */
-  warning: { ruleId: string; appName: string; secondsLeft: number } | null;
+  warning: {
+    ruleId: string;
+    appName: string;
+    secondsLeft: number;
+    limitMinutes: number | null;
+  } | null;
 };
 
 const GRACE_SECONDS = 60;
@@ -214,6 +219,7 @@ export function ControlledProvider({ children }: { children: ReactNode }) {
       ruleId: rule.id,
       appName: rule.app_name,
       secondsLeft: Math.max(0, Math.min(GRACE_SECONDS, Math.ceil(left))),
+      limitMinutes: rule.duration_minutes ?? null,
     };
     // `tick` intentionally re-runs the countdown every second.
     // eslint-disable-next-line react-hooks/exhaustive-deps
