@@ -1,12 +1,21 @@
 import { useEffect, useState } from "react";
 import { VIRTUAL_APPS, type VirtualApp } from "@/lib/yat";
 
-function AppIcon({ app, onOpen }: { app: VirtualApp; onOpen: (id: string) => void }) {
+function AppIcon({
+  app,
+  onOpen,
+  busy,
+}: {
+  app: VirtualApp;
+  onOpen: (id: string) => void;
+  busy?: boolean;
+}) {
   return (
     <button
       type="button"
       onClick={() => onOpen(app.id)}
-      className="flex flex-col items-center gap-2 focus:outline-none"
+      disabled={busy}
+      className="flex flex-col items-center gap-2 focus:outline-none disabled:opacity-60"
     >
       <span
         className="flex h-[60px] w-[60px] items-center justify-center rounded-2xl text-2xl font-semibold text-white shadow-sm transition-transform active:scale-95"
@@ -22,7 +31,13 @@ function AppIcon({ app, onOpen }: { app: VirtualApp; onOpen: (id: string) => voi
   );
 }
 
-export function HomeScreen({ onOpenApp }: { onOpenApp: (id: string) => void }) {
+export function HomeScreen({
+  onOpenApp,
+  busyApp,
+}: {
+  onOpenApp: (id: string) => void;
+  busyApp?: string | null;
+}) {
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -45,7 +60,7 @@ export function HomeScreen({ onOpenApp }: { onOpenApp: (id: string) => void }) {
 
       <div className="grid grid-cols-4 gap-x-3 gap-y-6">
         {VIRTUAL_APPS.map((app) => (
-          <AppIcon key={app.id} app={app} onOpen={onOpenApp} />
+          <AppIcon key={app.id} app={app} onOpen={onOpenApp} busy={busyApp === app.id} />
         ))}
       </div>
 

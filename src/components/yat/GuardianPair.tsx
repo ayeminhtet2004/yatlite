@@ -59,9 +59,14 @@ function Toggle({
 export function GuardianPair({
   guardianId,
   onPaired,
+  blocked = false,
+  onUpgrade,
 }: {
   guardianId: string;
   onPaired: () => void;
+  /** A second controlled device requires Premium. */
+  blocked?: boolean;
+  onUpgrade?: () => void;
 }) {
   const [step, setStep] = useState<Step>("form");
   const [deviceName, setDeviceName] = useState("");
