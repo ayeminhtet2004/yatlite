@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { GuardianDevices } from "./GuardianDevices";
+import { GuardianPair } from "./GuardianPair";
+
 
 const NAV = [
   { id: "home", label: "Home", glyph: "⌂" },
@@ -71,16 +74,15 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
       )}
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6">
-        {tab === "home" ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card px-5 py-10 text-center">
-            <p className="text-[15px] font-semibold text-card-foreground">
-              No devices connected yet.
-            </p>
-            <p className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
-              Tap the + button to generate a pair code.
-            </p>
-          </div>
-        ) : (
+        {tab === "home" && user && (
+          <GuardianDevices guardianId={user.id} onPair={() => setTab("pair")} />
+        )}
+
+        {tab === "pair" && user && (
+          <GuardianPair guardianId={user.id} onPaired={() => setTab("home")} />
+        )}
+
+        {tab !== "home" && tab !== "pair" && (
           <div className="rounded-2xl border border-dashed border-border bg-card px-5 py-10 text-center">
             <p className="text-[15px] font-semibold text-card-foreground">Coming next</p>
             <p className="mt-1.5 text-[13px] text-muted-foreground">
@@ -88,6 +90,7 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
             </p>
           </div>
         )}
+
 
         <button
           type="button"
