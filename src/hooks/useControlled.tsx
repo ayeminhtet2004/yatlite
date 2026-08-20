@@ -40,7 +40,12 @@ type ControlledValue = {
   closeApp: () => Promise<void>;
   visitSite: (url: string, title: string, domain: string, risk: string) => Promise<void>;
   /** Active time-limit warning (60s grace) for the app currently open. */
-  warning: { ruleId: string; appName: string; secondsLeft: number } | null;
+  warning: {
+    ruleId: string;
+    appName: string;
+    secondsLeft: number;
+    limitMinutes: number | null;
+  } | null;
 };
 
 const GRACE_SECONDS = 60;
@@ -93,17 +98,22 @@ export function ControlledProvider({ children }: { children: ReactNode }) {
 
   // Heartbeat + light polling while paired (the anon device cannot use
   // postgres_changes, so a guardian broadcast + short poll keeps it live).
-  const warnedAt = state?.rules?.find((r) => r.status === "pending" && r.warned_at)?.warned_at;
+  // A pending schedule rule inside its grace window polls every second so the
+  // block lands the moment grace_expires_at passes, even mid-app.
+  const graceAt = state?.rules?.find(
+    (r) => r.status === "pending" && r.grace_expires_at,
+  )?.grace_expires_at;
 
   useEffect(() => {
     if (!token) return;
-    const poll = window.setInterval(() => void refresh(), warnedAt ? 1000 : POLL_MS);
+    const poll = window.setInterval(() => void refresh(), graceAt ? 1000 : POLL_MS);
     const beat = window.setInterval(() => void refresh(), HEARTBEAT_MS);
     return () => {
       window.clearInterval(poll);
       window.clearInterval(beat);
     };
-  }, [token, refresh, warnedAt]);
+  }, [token, refresh, graceAt]);
+
 
   // Instant nudges from the guardian (block/unblock, new rule, delete).
   const deviceId = state?.device.id ?? null;
@@ -192,23 +202,29 @@ export function ControlledProvider({ children }: { children: ReactNode }) {
 
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    if (!warnedAt) return;
+    if (!graceAt) return;
     const id = window.setInterval(() => setTick((n) => n + 1), 1000);
     return () => window.clearInterval(id);
-  }, [warnedAt]);
+  }, [graceAt]);
+
+  // Countdown is derived from the PERSISTED grace_expires_at (server clock),
+  // so a refresh mid-grace resumes at the correct remaining seconds.
+  const skewMs = state?.now ? new Date(state.now).getTime() - Date.now() : 0;
 
   const warning = useMemo(() => {
-    const rule = state?.rules?.find((r) => r.status === "pending" && r.warned_at);
-    if (!rule?.warned_at) return null;
-    const elapsed = (Date.now() - new Date(rule.warned_at).getTime()) / 1000;
+    const rule = state?.rules?.find((r) => r.status === "pending" && r.grace_expires_at);
+    if (!rule?.grace_expires_at) return null;
+    const left = (new Date(rule.grace_expires_at).getTime() - (Date.now() + skewMs)) / 1000;
     return {
       ruleId: rule.id,
       appName: rule.app_name,
-      secondsLeft: Math.max(0, Math.ceil(GRACE_SECONDS - elapsed)),
+      secondsLeft: Math.max(0, Math.min(GRACE_SECONDS, Math.ceil(left))),
+      limitMinutes: rule.duration_minutes ?? null,
     };
     // `tick` intentionally re-runs the countdown every second.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, warnedAt, tick]);
+  }, [state, graceAt, tick, skewMs]);
+
 
 
   const value = useMemo<ControlledValue>(

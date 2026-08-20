@@ -42,6 +42,8 @@ export type VirtualAppRow = {
 };
 
 export type DeviceState = {
+  /** Server clock at the moment the state was produced (clock-skew safe countdowns). */
+  now?: string;
   device: DeviceRow;
   permissions: PermissionsRow | null;
   apps: VirtualAppRow[];
@@ -284,7 +286,10 @@ export type ControlledRule = {
   reward_points: number;
   status: "pending" | "success" | "fail";
   accumulated_seconds: number;
+  effective_seconds?: number;
   warned_at?: string | null;
+  limit_reached_at?: string | null;
+  grace_expires_at?: string | null;
   created_at: string;
 };
 
@@ -570,6 +575,12 @@ export async function markControlledNotificationsRead(token: string, id?: string
   });
   if (error) throw error;
   return unwrapState(data);
+}
+
+/** Guardian-side idempotent rule enforcement (safe, RLS-checked, no service key). */
+export async function guardianEnforce(deviceId: string) {
+  const { error } = await db.rpc("yat_guardian_enforce", { p_device_id: deviceId });
+  if (error) console.error("[guardian] enforce", error);
 }
 
 /** Instant cross-device nudge: the controlled device is anonymous and cannot
