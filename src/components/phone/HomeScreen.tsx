@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { VIRTUAL_APPS, type VirtualApp } from "@/lib/yat";
 
 function AppIcon({ app, onOpen }: { app: VirtualApp; onOpen: (id: string) => void }) {
@@ -22,16 +23,25 @@ function AppIcon({ app, onOpen }: { app: VirtualApp; onOpen: (id: string) => voi
 }
 
 export function HomeScreen({ onOpenApp }: { onOpenApp: (id: string) => void }) {
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="flex flex-1 flex-col overflow-y-auto px-5 pb-6 pt-4">
       <div className="mb-8 text-center">
         <p className="text-4xl font-semibold tracking-tight text-foreground">
-          {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
+          {now ? now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }) : "--:--"}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
-          {new Date().toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" })}
+          {now ? now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" }) : "\u00a0"}
         </p>
       </div>
+
 
       <div className="grid grid-cols-4 gap-x-3 gap-y-6">
         {VIRTUAL_APPS.map((app) => (
