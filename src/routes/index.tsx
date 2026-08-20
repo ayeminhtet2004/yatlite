@@ -5,6 +5,7 @@ import { PhoneShell } from "@/components/phone/PhoneShell";
 import { HomeScreen } from "@/components/phone/HomeScreen";
 import { SimulatedApp } from "@/components/phone/SimulatedApp";
 import { BlockScreen } from "@/components/phone/BlockScreen";
+import { RecentsScreen } from "@/components/phone/RecentsScreen";
 import { ChromeApp, type DemoSite } from "@/components/phone/ChromeApp";
 import { YatLiteApp } from "@/components/yat/YatLiteApp";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -41,9 +42,7 @@ function Index() {
   return (
     <AuthProvider>
       <ControlledProvider>
-        <PhoneShell>
-          <PhoneRuntime />
-        </PhoneShell>
+        <PhoneRuntime />
       </ControlledProvider>
     </AuthProvider>
   );
@@ -57,11 +56,15 @@ function PhoneRuntime() {
   const [hydrated, setHydrated] = useState(false);
   const [blockedApp, setBlockedApp] = useState<string | null>(null);
   const [launching, setLaunching] = useState<string | null>(null);
+  const [recents, setRecents] = useState<string[]>([]);
+  const [recentsOpen, setRecentsOpen] = useState(false);
   const controlled = useControlled();
 
   useEffect(() => {
     setRole(loadRole());
-    setForegroundApp(loadScreen());
+    const last = loadScreen();
+    setForegroundApp(last);
+    if (last) setRecents([last]);
     setHydrated(true);
   }, []);
 
@@ -81,6 +84,7 @@ function PhoneRuntime() {
   async function openApp(appId: string) {
     if (launching) return;
     setBlockedApp(null);
+    setRecentsOpen(false);
 
     if (appId !== "yat_lite" && controlled.paired) {
       setLaunching(appId);
@@ -99,6 +103,7 @@ function PhoneRuntime() {
 
     saveScreen(appId);
     setForegroundApp(appId);
+    setRecents((list) => [appId, ...list.filter((id) => id !== appId)].slice(0, 8));
   }
 
   function goHome() {
@@ -106,8 +111,21 @@ function PhoneRuntime() {
       void controlled.closeApp();
     }
     setBlockedApp(null);
+    setRecentsOpen(false);
     clearScreen();
     setForegroundApp(null);
+  }
+
+  function goBack() {
+    if (recentsOpen) {
+      setRecentsOpen(false);
+      return;
+    }
+    if (blockedApp) {
+      setBlockedApp(null);
+      return;
+    }
+    if (foregroundApp) goHome();
   }
 
   function selectRole(next: YatRole | null) {
@@ -121,32 +139,56 @@ function PhoneRuntime() {
     void controlled.visitSite(site.url, site.title, site.domain, site.risk);
   }
 
-  if (!hydrated) {
-    return (
-      <div
-        className="flex flex-1 items-center justify-center bg-background"
-        aria-label="Loading Yat Lite"
-      >
-        <div className="h-8 w-8 animate-pulse rounded-lg bg-primary" />
-      </div>
-    );
-  }
+  const content = () => {
+    if (!hydrated) {
+      return (
+        <div
+          className="flex flex-1 items-center justify-center bg-background"
+          aria-label="Loading Yat Lite"
+        >
+          <div className="h-8 w-8 animate-pulse rounded-lg bg-primary" />
+        </div>
+      );
+    }
 
-  if (blockedApp) {
-    return <BlockScreen appName={blockedApp} onHome={() => setBlockedApp(null)} />;
-  }
+    if (recentsOpen) {
+      return (
+        <RecentsScreen
+          recents={recents}
+          onOpen={(id) => void openApp(id)}
+          onClear={() => setRecents([])}
+          onHome={goHome}
+        />
+      );
+    }
 
-  if (foregroundApp === null) {
-    return <HomeScreen onOpenApp={(id) => void openApp(id)} busyApp={launching} />;
-  }
+    if (blockedApp) {
+      return <BlockScreen appName={blockedApp} onHome={() => setBlockedApp(null)} />;
+    }
 
-  if (foregroundApp === "yat_lite") {
-    return <YatLiteApp role={role} onSelectRole={selectRole} onHome={goHome} />;
-  }
+    if (foregroundApp === null) {
+      return <HomeScreen onOpenApp={(id) => void openApp(id)} busyApp={launching} />;
+    }
 
-  if (foregroundApp === "chrome") {
-    return <ChromeApp onVisit={onVisit} onHome={goHome} />;
-  }
+    if (foregroundApp === "yat_lite") {
+      return <YatLiteApp role={role} onSelectRole={selectRole} onHome={goHome} />;
+    }
 
-  return <SimulatedApp appId={foregroundApp} onHome={goHome} />;
+    if (foregroundApp === "chrome") {
+      return <ChromeApp onVisit={onVisit} onHome={goHome} />;
+    }
+
+    return <SimulatedApp appId={foregroundApp} onHome={goHome} />;
+  };
+
+  return (
+    <PhoneShell
+      onBack={goBack}
+      onHome={goHome}
+      onRecents={() => setRecentsOpen((open) => !open)}
+    >
+      {content()}
+    </PhoneShell>
+  );
 }
+
