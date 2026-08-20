@@ -141,6 +141,24 @@ export function GuardianPair({
     setCopied(false);
   }
 
+  if (blocked) {
+    return (
+      <div className="rounded-2xl border border-border bg-card px-5 py-8 text-center">
+        <p className="text-[15px] font-semibold text-card-foreground">Premium required</p>
+        <p className="mt-1.5 text-[13px] text-muted-foreground">
+          Your first controlled device is free. Adding more devices needs Yat Lite Premium.
+        </p>
+        <button
+          type="button"
+          onClick={() => onUpgrade?.()}
+          className="mt-5 h-12 w-full rounded-2xl bg-primary text-[14px] font-semibold text-primary-foreground"
+        >
+          See Premium
+        </button>
+      </div>
+    );
+  }
+
   if (step === "success" && pairing) {
     return (
       <div className="flex flex-col items-center px-2 py-10 text-center">
