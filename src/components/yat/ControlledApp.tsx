@@ -271,11 +271,23 @@ export function ControlledApp({
 
         <button
           type="button"
+          onClick={() => {
+            goToConnect(false);
+            onChangeRole();
+          }}
+          className="mt-6 h-14 w-full rounded-2xl border border-destructive text-[15px] font-semibold text-destructive"
+        >
+          Log out & switch role
+        </button>
+
+        <button
+          type="button"
           onClick={onHome}
-          className="mt-6 w-full text-center text-[13px] font-medium text-muted-foreground"
+          className="mt-3 w-full text-center text-[13px] font-medium text-muted-foreground"
         >
           Close Yat Lite
         </button>
+
       </div>
     );
   }
