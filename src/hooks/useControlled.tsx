@@ -93,17 +93,22 @@ export function ControlledProvider({ children }: { children: ReactNode }) {
 
   // Heartbeat + light polling while paired (the anon device cannot use
   // postgres_changes, so a guardian broadcast + short poll keeps it live).
-  const warnedAt = state?.rules?.find((r) => r.status === "pending" && r.warned_at)?.warned_at;
+  // A pending schedule rule inside its grace window polls every second so the
+  // block lands the moment grace_expires_at passes, even mid-app.
+  const graceAt = state?.rules?.find(
+    (r) => r.status === "pending" && r.grace_expires_at,
+  )?.grace_expires_at;
 
   useEffect(() => {
     if (!token) return;
-    const poll = window.setInterval(() => void refresh(), warnedAt ? 1000 : POLL_MS);
+    const poll = window.setInterval(() => void refresh(), graceAt ? 1000 : POLL_MS);
     const beat = window.setInterval(() => void refresh(), HEARTBEAT_MS);
     return () => {
       window.clearInterval(poll);
       window.clearInterval(beat);
     };
-  }, [token, refresh, warnedAt]);
+  }, [token, refresh, graceAt]);
+
 
   // Instant nudges from the guardian (block/unblock, new rule, delete).
   const deviceId = state?.device.id ?? null;
