@@ -48,7 +48,15 @@ function ResetPassword() {
   }
 
   return (
-    <PhoneShell>
+    <PhoneShell
+      onBack={() => window.history.back()}
+      onHome={() => {
+        window.location.href = "/";
+      }}
+      onRecents={() => {
+        window.location.href = "/";
+      }}
+    >
       <div className="flex flex-1 flex-col overflow-y-auto px-6 pb-8 pt-6">
         <h1 className="text-[24px] font-semibold tracking-tight text-foreground">New Password</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
