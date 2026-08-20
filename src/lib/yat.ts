@@ -26,6 +26,11 @@ export function saveScreen(screen: string) {
   window.localStorage.setItem(SCREEN_KEY, screen);
 }
 
+export function clearScreen() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(SCREEN_KEY);
+}
+
 export type VirtualApp = {
   id: string;
   name: string;
