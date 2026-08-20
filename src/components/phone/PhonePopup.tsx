@@ -24,8 +24,7 @@ export function PhonePopup({
     <div className="pointer-events-none absolute inset-x-0 top-0 z-50 flex justify-center px-3 pt-3">
       <div
         role="status"
-        className={`pointer-events-auto flex w-full max-w-[380px] items-start gap-3 rounded-2xl ${style.bg} px-4 py-3 text-primary-foreground shadow-lg animate-[slide-in-top_0.35s_ease-out] backdrop-blur`}
-        style={{ animationName: "fade-in" }}
+        className={`pointer-events-auto flex w-full max-w-[380px] items-start gap-3 rounded-2xl ${style.bg} px-4 py-3 text-primary-foreground shadow-lg backdrop-blur animate-fade-in`}
       >
         <span className="text-xl leading-none">{style.icon}</span>
         <div className="min-w-0 flex-1">
