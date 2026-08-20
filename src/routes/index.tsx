@@ -1,24 +1,53 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import { PhoneShell } from "@/components/phone/PhoneShell";
+import { HomeScreen } from "@/components/phone/HomeScreen";
+import { SimulatedApp } from "@/components/phone/SimulatedApp";
+import { YatLiteApp } from "@/components/yat/YatLiteApp";
+import { AuthProvider } from "@/hooks/useAuth";
+import { loadRole, saveRole, type YatRole } from "@/lib/yat";
+
+const TITLE = "Yat Lite — Guardian & Controlled Device Simulator";
+const DESCRIPTION =
+  "Yat Lite simulates a mobile Guardian and Controlled Device ecosystem in one web app, with realtime pairing, activity and app control.";
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: TITLE },
+      { name: "description", content: DESCRIPTION },
+      { property: "og:title", content: TITLE },
+      { property: "og:description", content: DESCRIPTION },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const [foregroundApp, setForegroundApp] = useState<string | null>(null);
+  const [role, setRole] = useState<YatRole | null>(null);
+
+  useEffect(() => {
+    setRole(loadRole());
+  }, []);
+
+  function selectRole(next: YatRole | null) {
+    saveRole(next);
+    setRole(next);
+  }
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <AuthProvider>
+      <PhoneShell>
+        {foregroundApp === null && <HomeScreen onOpenApp={setForegroundApp} />}
+        {foregroundApp === "yat_lite" && (
+          <YatLiteApp role={role} onSelectRole={selectRole} onHome={() => setForegroundApp(null)} />
+        )}
+        {foregroundApp !== null && foregroundApp !== "yat_lite" && (
+          <SimulatedApp appId={foregroundApp} onHome={() => setForegroundApp(null)} />
+        )}
+      </PhoneShell>
+    </AuthProvider>
   );
 }
