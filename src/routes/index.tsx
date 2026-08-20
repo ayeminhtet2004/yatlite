@@ -8,6 +8,7 @@ import { BlockScreen } from "@/components/phone/BlockScreen";
 import { PhonePopup, type PhonePopupTone } from "@/components/phone/PhonePopup";
 import { RecentsScreen } from "@/components/phone/RecentsScreen";
 import { ChromeApp, type DemoSite } from "@/components/phone/ChromeApp";
+import { SlotApp } from "@/components/phone/SlotApp";
 import { YatLiteApp } from "@/components/yat/YatLiteApp";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ControlledProvider, useControlled } from "@/hooks/useControlled";
@@ -220,6 +221,10 @@ function PhoneRuntime() {
 
     if (foregroundApp === "chrome") {
       return <ChromeApp onVisit={onVisit} onHome={goHome} />;
+    }
+
+    if (foregroundApp === "lucky_slots") {
+      return <SlotApp onHome={goHome} />;
     }
 
     return <SimulatedApp appId={foregroundApp} onHome={goHome} />;
