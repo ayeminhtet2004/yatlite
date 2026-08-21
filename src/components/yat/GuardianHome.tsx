@@ -221,6 +221,16 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
           </button>
           <button
             type="button"
+            onClick={() => {
+              setMenuOpen(false);
+              setOverlay("rewards");
+            }}
+            className="mt-2 h-11 w-full rounded-xl border border-border text-[14px] font-semibold text-primary"
+          >
+            🎁 Rewards
+          </button>
+          <button
+            type="button"
             onClick={() => void signOut()}
             className="mt-2 h-11 w-full rounded-xl border border-border text-[14px] font-semibold text-destructive"
           >
