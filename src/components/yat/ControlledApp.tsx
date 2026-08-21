@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ArrowLeft, QrCode, ShieldCheck } from "lucide-react";
 import { normalizeCode } from "@/lib/yatApi";
 import { useControlled } from "@/hooks/useControlled";
 
