@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ControlledApp } from "./ControlledApp";
 import { GuardianAuth } from "./GuardianAuth";
 import { GuardianHome } from "./GuardianHome";
-import { RoleSelect } from "./RoleSelect";
+
 import { WelcomeScreen } from "./WelcomeScreen";
 import { useAuth } from "@/hooks/useAuth";
 import type { YatRole } from "@/lib/yat";
@@ -39,7 +39,18 @@ export function YatLiteApp({
     );
   }
 
-  if (!role) return <RoleSelect onSelect={onSelectRole} onHome={onHome} />;
+  // Combined entry screen: pairing + "I am a Guardian" (replaces the role cards).
+  if (!role) {
+    return (
+      <ControlledApp
+        onHome={onHome}
+        onChangeRole={() => onSelectRole(null)}
+        combined
+        onGuardian={() => onSelectRole("guardian")}
+        onPairSuccess={() => onSelectRole("controlled")}
+      />
+    );
+  }
 
   if (role === "controlled") {
     return <ControlledApp onHome={onHome} onChangeRole={() => onSelectRole(null)} />;
