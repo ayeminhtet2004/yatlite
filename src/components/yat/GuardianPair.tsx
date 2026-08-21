@@ -27,14 +27,21 @@ const PERMISSION_ITEMS: {
 function Toggle({
   checked,
   disabled,
+  locked,
   onChange,
   label,
 }: {
   checked: boolean;
   disabled?: boolean;
+  locked?: boolean;
   onChange: (next: boolean) => void;
   label: string;
 }) {
+  const trackBg = locked
+    ? "bg-[#7EA6E8]"
+    : checked
+      ? "bg-primary"
+      : "bg-[#D1D5DB]";
   return (
     <button
       type="button"
@@ -43,15 +50,19 @@ function Toggle({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`h-7 w-12 shrink-0 rounded-full transition-colors ${
-        checked ? "bg-primary" : "bg-muted"
-      } ${disabled ? "opacity-60" : ""}`}
+      className="flex shrink-0 items-center rounded-full p-1.5 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-card"
     >
       <span
-        className={`block h-6 w-6 rounded-full bg-card shadow transition-transform ${
-          checked ? "translate-x-[22px]" : "translate-x-[2px]"
-        }`}
-      />
+        className={`relative flex h-8 w-[58px] items-center rounded-full border transition-colors duration-160 ease-out ${
+          trackBg
+        } ${checked ? "border-transparent" : "border-[#BFC5CE]"}`}
+      >
+        <span
+          className={`absolute top-1/2 h-[26px] w-[26px] -translate-y-1/2 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.18)] transition-transform duration-160 ease-out ${
+            checked ? "translate-x-[28px]" : "translate-x-[3px]"
+          }`}
+        />
+      </span>
     </button>
   );
 }
