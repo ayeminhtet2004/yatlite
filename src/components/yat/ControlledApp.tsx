@@ -38,6 +38,7 @@ export function ControlledApp({
     try {
       await ctl.pair(code);
       setJustPaired(true);
+      onPairSuccess?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Pairing failed.");
     } finally {
