@@ -356,21 +356,27 @@ export function ControlledApp({
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-y-auto px-6 pb-8 pt-4">
+    <div className="flex flex-1 flex-col overflow-y-auto px-6 pb-10 pt-4">
       <button
         type="button"
+        aria-label="Back"
         onClick={onHome}
-        className="mb-8 self-start text-[13px] font-medium text-muted-foreground"
+        className="mb-2 flex h-10 w-10 items-center justify-center self-start rounded-full text-[20px] text-foreground"
       >
-        ← Home
+        <ArrowLeft className="h-5 w-5" />
       </button>
-      <h1 className="text-[24px] font-semibold tracking-tight text-foreground">Connect Device</h1>
-      <p className="mt-1.5 text-sm text-muted-foreground">
+
+      <PairingIllustration />
+
+      <h1 className="mt-6 text-center text-[30px] font-bold tracking-tight text-foreground">
+        Connect Device
+      </h1>
+      <p className="mx-auto mt-2 max-w-[280px] text-center text-[14px] text-muted-foreground">
         Enter the code shown on the Guardian's device.
       </p>
 
       {ctl.disconnected && (
-        <p className="mt-4 rounded-xl bg-secondary px-3 py-2 text-[13px] text-muted-foreground">
+        <p className="mt-4 rounded-xl bg-secondary px-3 py-2 text-center text-[13px] text-muted-foreground">
           This device was disconnected by its Guardian. Pair again to reconnect.
         </p>
       )}
@@ -380,24 +386,25 @@ export function ControlledApp({
         onChange={(e) => setCode(normalizeCode(e.target.value).slice(0, 6))}
         placeholder="P3Y9X7"
         autoCapitalize="characters"
-        className="mt-6 h-16 w-full rounded-2xl border border-border bg-card text-center text-[26px] font-bold tracking-[0.3em] text-foreground outline-none focus:border-primary"
+        className="mt-7 h-[70px] w-full rounded-[18px] border border-border bg-card text-center text-[26px] font-bold tracking-[0.34em] text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary"
       />
 
       <button
         type="button"
         onClick={() => setCode("")}
-        className="mt-3 self-center text-[13px] font-medium text-primary"
+        className="mt-4 flex items-center justify-center gap-2 self-center text-[14px] font-semibold text-primary"
       >
-        Scan QR instead (enter code manually)
+        <QrCode className="h-[18px] w-[18px]" />
+        Connect via Scan QR Code
       </button>
 
-      {error && <p className="mt-4 text-[13px] text-destructive">{error}</p>}
+      {error && <p className="mt-4 text-center text-[13px] text-destructive">{error}</p>}
 
       <button
         type="button"
         disabled={code.length < 6 || busy}
         onClick={() => void connect()}
-        className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-[15px] font-semibold text-primary-foreground disabled:opacity-50"
+        className="mt-6 flex h-[60px] w-full items-center justify-center gap-2 rounded-[20px] bg-primary text-[16px] font-semibold text-primary-foreground disabled:opacity-50"
       >
         {busy && (
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
@@ -405,13 +412,48 @@ export function ControlledApp({
         {busy ? "Connecting…" : "Connect Device"}
       </button>
 
-      <button
-        type="button"
-        onClick={onChangeRole}
-        className="mt-6 text-center text-[13px] font-medium text-primary"
-      >
-        Change device role
-      </button>
+      {combined ? (
+        <>
+          <div className="mt-6 flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-[13px] text-muted-foreground">Or</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onGuardian?.()}
+            className="mt-6 h-[58px] w-full rounded-[20px] border-2 border-primary bg-transparent text-[16px] font-semibold text-primary"
+          >
+            I am a Guardian
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={onChangeRole}
+          className="mt-6 text-center text-[13px] font-medium text-primary"
+        >
+          Change device role
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Purely decorative pairing illustration: two devices with a shield between. */
+function PairingIllustration() {
+  return (
+    <div className="mx-auto mt-2 flex items-center justify-center gap-3" aria-hidden="true">
+      <span className="flex h-[86px] w-[54px] items-center justify-center rounded-[14px] border-2 border-primary/35 bg-card">
+        <span className="h-1 w-5 rounded-full bg-primary/30" />
+      </span>
+      <span className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_8px_20px_-8px_rgba(0,86,210,0.7)]">
+        <ShieldCheck className="h-7 w-7" />
+      </span>
+      <span className="flex h-[86px] w-[54px] items-center justify-center rounded-[14px] border-2 border-primary/35 bg-card">
+        <span className="h-1 w-5 rounded-full bg-primary/30" />
+      </span>
     </div>
   );
 }
