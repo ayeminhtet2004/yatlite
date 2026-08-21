@@ -330,14 +330,6 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
               ))}
           </>
         )}
-
-        <button
-          type="button"
-          onClick={onHome}
-          className="mt-6 w-full text-center text-[13px] font-medium text-muted-foreground"
-        >
-          Close Yat Lite
-        </button>
       </div>
 
       <nav className="shrink-0 px-4 pb-3 pt-1">
