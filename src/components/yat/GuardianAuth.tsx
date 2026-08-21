@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Mode = "login" | "signup" | "forgot";
@@ -27,7 +28,7 @@ function Field({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="h-[54px] w-full rounded-2xl border border-input bg-card px-4 text-[15px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+        className="h-[60px] w-full rounded-[18px] border border-input bg-muted px-5 text-[15px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
       />
     </label>
   );
@@ -102,118 +103,135 @@ export function GuardianAuth({ onBack }: { onBack: () => void }) {
     }
   }
 
-  const title =
-    mode === "signup" ? "Create Guardian Account" : mode === "forgot" ? "Forgot Password" : "Welcome Back";
-  const subtitle =
+  const heading =
     mode === "signup"
-      ? "Set up your Guardian account to connect devices."
+      ? "Create your Guardian account"
       : mode === "forgot"
-        ? "We'll email you a link to reset your password."
-        : "Sign in to your Guardian account.";
+        ? "Reset your Guardian password"
+        : "Sign in as Guardian to continue";
 
   return (
-    <div className="flex flex-1 flex-col overflow-y-auto px-6 pb-8 pt-4">
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-6 self-start text-[13px] font-medium text-muted-foreground"
-      >
-        ← Back
-      </button>
+    <div className="flex flex-1 flex-col overflow-y-auto bg-card">
+      {/* Blue hero */}
+      <div className="bg-primary px-6 pb-12 pt-8 text-center">
+        <div className="mx-auto grid h-[76px] w-[76px] place-items-center rounded-full bg-card">
+          <UserRound className="h-9 w-9 text-primary" strokeWidth={1.75} />
+        </div>
+        <h1 className="mx-auto mt-5 max-w-[280px] text-[22px] font-bold leading-snug text-primary-foreground">
+          {heading}
+        </h1>
+      </div>
 
-      <h1 className="text-[24px] font-semibold tracking-tight text-foreground">{title}</h1>
-      <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p>
-
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        {mode === "signup" && (
-          <Field
-            label="Name"
-            type="text"
-            value={name}
-            onChange={setName}
-            placeholder="Your name"
-            autoComplete="name"
-          />
-        )}
-        <Field
-          label="Email"
-          type="email"
-          value={email}
-          onChange={setEmail}
-          placeholder="you@example.com"
-          autoComplete="email"
-        />
-        {mode !== "forgot" && (
-          <Field
-            label="Password"
-            type="password"
-            value={password}
-            onChange={setPassword}
-            placeholder="••••••••"
-            autoComplete={mode === "signup" ? "new-password" : "current-password"}
-          />
-        )}
-        {mode === "signup" && (
-          <Field
-            label="Confirm Password"
-            type="password"
-            value={confirm}
-            onChange={setConfirm}
-            placeholder="••••••••"
-            autoComplete="new-password"
-          />
-        )}
-
-        {mode === "login" && (
+      {/* White form sheet */}
+      <div className="-mt-8 flex flex-1 flex-col rounded-t-[32px] bg-card px-6 pb-10 pt-7">
+        <div className="grid grid-cols-2 rounded-[18px] border border-border bg-muted p-1">
           <button
             type="button"
-            onClick={() => switchMode("forgot")}
-            className="text-[13px] font-medium text-primary"
+            onClick={() => switchMode("login")}
+            className={`h-[46px] rounded-[14px] text-[15px] transition-colors ${
+              mode !== "signup"
+                ? "bg-card font-semibold text-primary shadow-sm"
+                : "font-medium text-muted-foreground"
+            }`}
           >
-            Forgot Password?
+            Log in
           </button>
-        )}
+          <button
+            type="button"
+            onClick={() => switchMode("signup")}
+            className={`h-[46px] rounded-[14px] text-[15px] transition-colors ${
+              mode === "signup"
+                ? "bg-card font-semibold text-primary shadow-sm"
+                : "font-medium text-muted-foreground"
+            }`}
+          >
+            Sign up
+          </button>
+        </div>
 
-        {error && (
-          <p className="rounded-2xl bg-block-surface px-4 py-3 text-[13px] text-destructive">
-            {error}
-          </p>
-        )}
-        {info && (
-          <p className="rounded-2xl bg-accent px-4 py-3 text-[13px] text-accent-foreground">{info}</p>
-        )}
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          {mode === "signup" && (
+            <Field
+              label="Name"
+              type="text"
+              value={name}
+              onChange={setName}
+              placeholder="Your name"
+              autoComplete="name"
+            />
+          )}
+          <Field
+            label="Email"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            placeholder="you@example.com"
+            autoComplete="email"
+          />
+          {mode !== "forgot" && (
+            <Field
+              label="Password"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              placeholder="••••••••"
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            />
+          )}
+          {mode === "signup" && (
+            <Field
+              label="Confirm Password"
+              type="password"
+              value={confirm}
+              onChange={setConfirm}
+              placeholder="••••••••"
+              autoComplete="new-password"
+            />
+          )}
+
+          {mode === "login" && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => switchMode("forgot")}
+                className="text-[13px] font-medium text-primary"
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
+
+          {error && (
+            <p className="rounded-2xl bg-block-surface px-4 py-3 text-[13px] text-destructive">
+              {error}
+            </p>
+          )}
+          {info && (
+            <p className="rounded-2xl bg-accent px-4 py-3 text-[13px] text-accent-foreground">{info}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={busy}
+            className="h-[60px] w-full rounded-[18px] bg-primary text-[16px] font-bold text-primary-foreground shadow-[0_8px_20px_-8px_var(--primary)] transition-opacity active:opacity-90 disabled:opacity-60"
+          >
+            {busy
+              ? "Please wait…"
+              : mode === "signup"
+                ? "Sign up"
+                : mode === "forgot"
+                  ? "Send Reset Link"
+                  : "Log in"}
+          </button>
+        </form>
 
         <button
-          type="submit"
-          disabled={busy}
-          className="h-[56px] w-full rounded-2xl bg-primary text-[15px] font-semibold text-primary-foreground transition-opacity active:opacity-90 disabled:opacity-60"
+          type="button"
+          onClick={onBack}
+          className="mt-6 self-center text-[14px] font-semibold text-primary"
         >
-          {busy
-            ? "Please wait…"
-            : mode === "signup"
-              ? "Sign Up"
-              : mode === "forgot"
-                ? "Send Reset Link"
-                : "Login"}
+          Back to Connect Device
         </button>
-      </form>
-
-      <div className="mt-6 text-center text-[13px] text-muted-foreground">
-        {mode === "login" ? (
-          <>
-            Don't have an account?{" "}
-            <button type="button" onClick={() => switchMode("signup")} className="font-semibold text-primary">
-              Sign Up
-            </button>
-          </>
-        ) : (
-          <>
-            Already have an account?{" "}
-            <button type="button" onClick={() => switchMode("login")} className="font-semibold text-primary">
-              Login
-            </button>
-          </>
-        )}
       </div>
     </div>
   );
