@@ -340,46 +340,77 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
       </div>
 
       <nav className="shrink-0 px-4 pb-3 pt-1">
-        <div className="flex items-end justify-between rounded-[28px] bg-secondary px-3 py-2 shadow-[0_10px_30px_-20px_hsl(var(--foreground)/0.6)]">
-          {NAV.map((item) =>
-            item.id === "pair" ? (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  setOverlay(null);
-                  setTab(item.id);
-                }}
-                className="-mt-5 flex flex-col items-center gap-1"
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground shadow-[0_10px_20px_-10px_hsl(var(--primary))]">
-                  +
-                </span>
-                <span className="text-[11px] font-medium text-muted-foreground">Pair</span>
-              </button>
-            ) : (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => {
-                  setOverlay(null);
-                  setTab(item.id);
-                }}
-                className={`flex flex-col items-center gap-1 rounded-2xl px-3 py-1.5 ${
-                  tab === item.id ? "bg-card" : ""
-                }`}
-              >
-                <span className={tab === item.id ? "text-primary" : "text-muted-foreground"}>
-                  {item.glyph}
-                </span>
-                <span
-                  className={`text-[11px] font-medium ${tab === item.id ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  {item.label}
-                </span>
-              </button>
-            ),
-          )}
+        <div className="flex items-center justify-between rounded-[32px] bg-[#DCEBFF] px-3 py-2.5">
+          <button
+            key="home"
+            type="button"
+            onClick={() => {
+              setOverlay(null);
+              setTab("home");
+            }}
+            className="flex flex-1 flex-col items-center gap-0.5 py-1"
+          >
+            <Home size={22} className={tab === "home" ? "text-primary" : "text-[#3A4660]"} />
+            <span className={`text-[11px] font-semibold ${tab === "home" ? "text-primary" : "text-[#3A4660]"}`}>
+              Home
+            </span>
+          </button>
+          <button
+            key="activity"
+            type="button"
+            onClick={() => {
+              setOverlay(null);
+              setTab("activity");
+            }}
+            className="flex flex-1 flex-col items-center gap-0.5 py-1"
+          >
+            <BarChart3 size={22} className={tab === "activity" ? "text-primary" : "text-[#3A4660]"} />
+            <span className={`text-[11px] font-semibold ${tab === "activity" ? "text-primary" : "text-[#3A4660]"}`}>
+              Activity
+            </span>
+          </button>
+          <div className="flex flex-shrink-0 items-center justify-center px-1">
+            <button
+              key="pair"
+              type="button"
+              onClick={() => {
+                setOverlay(null);
+                setTab("pair");
+              }}
+              className="flex h-[60px] w-[74px] flex-col items-center justify-center gap-0.5 rounded-[22px] bg-primary text-primary-foreground shadow-[0_8px_18px_-8px_hsl(var(--primary))]"
+            >
+              <Plus size={20} strokeWidth={2.5} />
+              <span className="text-[12px] font-semibold">Pair</span>
+            </button>
+          </div>
+          <button
+            key="apps"
+            type="button"
+            onClick={() => {
+              setOverlay(null);
+              setTab("apps");
+            }}
+            className="flex flex-1 flex-col items-center gap-0.5 py-1"
+          >
+            <LayoutGrid size={22} className={tab === "apps" ? "text-primary" : "text-[#3A4660]"} />
+            <span className={`text-[11px] font-semibold ${tab === "apps" ? "text-primary" : "text-[#3A4660]"}`}>
+              Apps
+            </span>
+          </button>
+          <button
+            key="rules"
+            type="button"
+            onClick={() => {
+              setOverlay(null);
+              setTab("rules");
+            }}
+            className="flex flex-1 flex-col items-center gap-0.5 py-1"
+          >
+            <ListChecks size={22} className={tab === "rules" ? "text-primary" : "text-[#3A4660]"} />
+            <span className={`text-[11px] font-semibold ${tab === "rules" ? "text-primary" : "text-[#3A4660]"}`}>
+              Rules
+            </span>
+          </button>
         </div>
       </nav>
     </div>
