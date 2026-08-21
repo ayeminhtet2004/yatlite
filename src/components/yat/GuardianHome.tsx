@@ -339,44 +339,48 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
         </button>
       </div>
 
-      <nav className="flex shrink-0 items-end justify-between border-t border-border bg-card px-4 pb-2 pt-2">
-        {NAV.map((item) =>
-          item.id === "pair" ? (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setOverlay(null);
-                setTab(item.id);
-              }}
-              className="flex flex-col items-center gap-1"
-            >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground">
-                +
-              </span>
-              <span className="text-[11px] font-medium text-muted-foreground">Pair</span>
-            </button>
-          ) : (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setOverlay(null);
-                setTab(item.id);
-              }}
-              className="flex flex-col items-center gap-1 px-2 py-1"
-            >
-              <span className={tab === item.id ? "text-primary" : "text-muted-foreground"}>
-                {item.glyph}
-              </span>
-              <span
-                className={`text-[11px] font-medium ${tab === item.id ? "text-primary" : "text-muted-foreground"}`}
+      <nav className="shrink-0 px-4 pb-3 pt-1">
+        <div className="flex items-end justify-between rounded-[28px] bg-secondary px-3 py-2 shadow-[0_10px_30px_-20px_hsl(var(--foreground)/0.6)]">
+          {NAV.map((item) =>
+            item.id === "pair" ? (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setOverlay(null);
+                  setTab(item.id);
+                }}
+                className="-mt-5 flex flex-col items-center gap-1"
               >
-                {item.label}
-              </span>
-            </button>
-          ),
-        )}
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-2xl font-semibold text-primary-foreground shadow-[0_10px_20px_-10px_hsl(var(--primary))]">
+                  +
+                </span>
+                <span className="text-[11px] font-medium text-muted-foreground">Pair</span>
+              </button>
+            ) : (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setOverlay(null);
+                  setTab(item.id);
+                }}
+                className={`flex flex-col items-center gap-1 rounded-2xl px-3 py-1.5 ${
+                  tab === item.id ? "bg-card" : ""
+                }`}
+              >
+                <span className={tab === item.id ? "text-primary" : "text-muted-foreground"}>
+                  {item.glyph}
+                </span>
+                <span
+                  className={`text-[11px] font-medium ${tab === item.id ? "text-primary" : "text-muted-foreground"}`}
+                >
+                  {item.label}
+                </span>
+              </button>
+            ),
+          )}
+        </div>
       </nav>
     </div>
   );
