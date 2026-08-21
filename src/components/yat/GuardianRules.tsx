@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/yat/AppIcon";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -125,9 +126,7 @@ export function GuardianRules({
               onClick={() => (premium ? setEditing(app) : onUpgrade())}
               className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-[15px] font-semibold">
-                {app.app_name.charAt(0)}
-              </span>
+              <AppIcon appName={app.app_name} />
               <span>
                 <span className="block text-[14px] font-semibold text-card-foreground">
                   {app.app_name}
@@ -150,9 +149,7 @@ export function GuardianRules({
             <div key={rule.id} className="rounded-2xl border border-border bg-card px-4 py-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-[15px] font-semibold">
-                    {(rule.virtual_apps?.app_name ?? "?").charAt(0)}
-                  </span>
+                  <AppIcon appName={rule.virtual_apps?.app_name} />
                   <div>
                     <p className="text-[14px] font-semibold text-card-foreground">
                       {rule.virtual_apps?.app_name}

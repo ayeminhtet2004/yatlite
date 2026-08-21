@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/yat/AppIcon";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -197,9 +198,7 @@ export function GuardianActivity({ deviceId }: { deviceId: string }) {
                   className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-[15px] font-semibold">
-                      {(session.virtual_apps?.app_name ?? "?").charAt(0)}
-                    </span>
+                    <AppIcon appName={session.virtual_apps?.app_name} />
                     <div>
                       <p className="text-[14px] font-semibold text-card-foreground">
                         {session.virtual_apps?.app_name ?? "App"}
