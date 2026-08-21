@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ControlledApp } from "./ControlledApp";
 import { GuardianAuth } from "./GuardianAuth";
 import { GuardianHome } from "./GuardianHome";
-import { RoleSelect } from "./RoleSelect";
+
 import { WelcomeScreen } from "./WelcomeScreen";
 import { useAuth } from "@/hooks/useAuth";
 import type { YatRole } from "@/lib/yat";
