@@ -134,17 +134,9 @@ export function GuardianDevices({
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-4">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="text-[13px] font-medium text-card-foreground">
-                  🔋 {device.battery_level}%
-                </span>
-                <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-secondary">
-                  <span
-                    className="block h-full rounded-full bg-primary"
-                    style={{ width: `${Math.max(0, Math.min(100, device.battery_level))}%` }}
-                  />
-                </span>
-              </div>
+              <span className="text-[13px] font-medium text-card-foreground">
+                🔋 {device.battery_level}%
+              </span>
               <span className="shrink-0 text-[13px] text-muted-foreground">
                 {device.installed_apps_count} apps
               </span>
