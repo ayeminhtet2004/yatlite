@@ -62,7 +62,12 @@ export type VirtualApp = {
   glyph: string;
 };
 
+/** Apps pinned to the launcher dock (kept out of the main grid). */
+export const DOCK_APP_IDS = ["phone", "messages", "contacts"];
+
 export const VIRTUAL_APPS: VirtualApp[] = [
+  { id: "phone", name: "Phone", color: "#0B8A4B", glyph: "📞" },
+  { id: "contacts", name: "Contacts", color: "#0056D2", glyph: "👤" },
   { id: "yat_lite", name: "Yat Lite", color: "#0056D2", glyph: "Y" },
   { id: "youtube", name: "YouTube", color: "#FF0033", glyph: "▶" },
   { id: "tiktok", name: "TikTok", color: "#111111", glyph: "♪" },
