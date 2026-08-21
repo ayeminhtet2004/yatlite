@@ -297,12 +297,16 @@ export function GuardianPair({
                   >
                     <div>
                       <p className="text-[14px] font-semibold text-card-foreground">{item.title}</p>
-                      <p className="text-[12px] text-muted-foreground">{item.hint}</p>
+                      <p className="text-[12px] text-muted-foreground">
+                        {item.hint}
+                        {required && <span aria-hidden="true"> 🔒</span>}
+                      </p>
                     </div>
                     <Toggle
                       label={item.title}
                       checked={value}
                       disabled={required}
+                      locked={required}
                       onChange={(next) =>
                         setPerms((prev) => ({
                           ...prev,
