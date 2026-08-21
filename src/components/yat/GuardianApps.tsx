@@ -116,36 +116,38 @@ export function GuardianApps({
         {apps.map((app) => (
           <div
             key={app.id}
-            className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3"
+            className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3"
           >
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary text-[15px] font-semibold text-foreground">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-[15px] font-semibold text-foreground">
                 {app.app_name.charAt(0)}
               </span>
-              <div>
-                <p className="text-[14px] font-semibold text-card-foreground">{app.app_name}</p>
-                <p className="text-[11px] text-muted-foreground">{app.risk_level} risk</p>
+              <div className="min-w-0">
+                <p className="truncate text-[14px] font-semibold text-card-foreground">
+                  {app.app_name}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {app.risk_level} risk · {app.blocked ? "Blocked" : "Allowed"}
+                </p>
               </div>
             </div>
             <button
               type="button"
-              role="switch"
-              aria-checked={Boolean(app.blocked)}
-              aria-label={`Block ${app.app_name}`}
+              aria-pressed={Boolean(app.blocked)}
+              aria-label={`${app.blocked ? "Unblock" : "Block"} ${app.app_name}`}
               disabled={monitoringOff || busy === app.id}
               onClick={() => void toggle(app, !app.blocked)}
-              className={`h-7 w-12 shrink-0 rounded-full transition-colors ${
-                app.blocked ? "bg-destructive" : "bg-muted"
+              className={`shrink-0 rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
+                app.blocked
+                  ? "bg-secondary text-foreground"
+                  : "bg-destructive text-destructive-foreground"
               } ${monitoringOff || busy === app.id ? "opacity-60" : ""}`}
             >
-              <span
-                className={`block h-6 w-6 rounded-full bg-card shadow transition-transform ${
-                  app.blocked ? "translate-x-[22px]" : "translate-x-[2px]"
-                }`}
-              />
+              {busy === app.id ? "…" : app.blocked ? "Unblock" : "Block"}
             </button>
           </div>
         ))}
+
       </div>
     </div>
   );
