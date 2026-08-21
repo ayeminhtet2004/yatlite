@@ -177,17 +177,11 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
           onDismiss={() => setPopup(null)}
         />
       )}
-      <header className="flex shrink-0 items-center justify-between px-5 pb-3 pt-2">
-        <h1 className="text-[20px] font-semibold tracking-tight text-foreground">Yat Lite !</h1>
+      <header className="flex shrink-0 items-center justify-between gap-3 px-6 pb-4 pt-3">
+        <h1 className="min-w-0 truncate text-[24px] font-bold tracking-tight text-foreground">
+          {(fullName || user?.email?.split("@")[0] || "Guardian") + " !"}
+        </h1>
         <div className="flex items-center gap-3 text-muted-foreground">
-          <button
-            type="button"
-            aria-label="Reward history"
-            onClick={() => setOverlay(overlay === "rewards" ? null : "rewards")}
-            className="text-lg"
-          >
-            🎁
-          </button>
           <button
             type="button"
             aria-label="Notifications"
