@@ -5,9 +5,11 @@ import { deleteDevice, fetchDevices, isOnline, type DeviceRow } from "@/lib/yatA
 export function GuardianDevices({
   guardianId,
   onPair,
+  onViewActivity,
 }: {
   guardianId: string;
   onPair: () => void;
+  onViewActivity: (deviceId: string) => void;
 }) {
   const [devices, setDevices] = useState<DeviceRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,50 +77,86 @@ export function GuardianDevices({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       {devices.map((device) => {
         const online = isOnline(device);
         return (
-          <div key={device.id} className="rounded-2xl border border-border bg-card p-4">
+          <div
+            key={device.id}
+            className="rounded-[26px] border border-border/70 bg-card p-5 shadow-[0_8px_24px_-18px_hsl(var(--foreground)/0.5)]"
+          >
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-lg">
-                  📱
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-secondary text-primary">
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-6 w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    aria-hidden="true"
+                  >
+                    <rect x="6" y="2.5" width="12" height="19" rx="3" />
+                    <path d="M10.5 18.5h3" strokeLinecap="round" />
+                  </svg>
                 </span>
-                <div>
-                  <p className="text-[15px] font-semibold text-card-foreground">
+                <div className="min-w-0">
+                  <p className="truncate text-[16px] font-semibold text-card-foreground">
                     {device.device_name}
                   </p>
-                  <p className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                    <span
-                      className={`h-2 w-2 rounded-full ${online ? "bg-primary" : "bg-muted-foreground/50"}`}
-                    />
-                    {online ? "Online" : "Offline"} · {device.installed_apps_count} apps
+                  <p className="truncate text-[12px] text-muted-foreground">
+                    Yat Lite Web Simulator
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                aria-label={`Disconnect ${device.device_name}`}
-                onClick={() => setConfirming(device)}
-                className="rounded-xl border border-border px-3 py-2 text-[14px] text-destructive"
-              >
-                🗑
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                <span
+                  className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    online
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${online ? "bg-primary" : "bg-muted-foreground/60"}`}
+                  />
+                  {online ? "Online" : "Offline"}
+                </span>
+                <button
+                  type="button"
+                  aria-label={`Disconnect ${device.device_name}`}
+                  onClick={() => setConfirming(device)}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-border text-[14px] text-destructive"
+                >
+                  🗑
+                </button>
+              </div>
             </div>
-            <div className="mt-3 flex gap-2 text-[12px] text-muted-foreground">
-              <span className="rounded-lg bg-secondary px-2 py-1">
-                Battery {device.battery_level}%
-              </span>
-              <span className="rounded-lg bg-secondary px-2 py-1">
-                {device.last_seen_at
-                  ? `Last seen ${new Date(device.last_seen_at).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}`
-                  : "Never seen"}
+
+            <div className="mt-4 flex items-center justify-between gap-4">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <span className="text-[13px] font-medium text-card-foreground">
+                  🔋 {device.battery_level}%
+                </span>
+                <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-secondary">
+                  <span
+                    className="block h-full rounded-full bg-primary"
+                    style={{ width: `${Math.max(0, Math.min(100, device.battery_level))}%` }}
+                  />
+                </span>
+              </div>
+              <span className="shrink-0 text-[13px] text-muted-foreground">
+                {device.installed_apps_count} apps
               </span>
             </div>
+
+            <button
+              type="button"
+              onClick={() => onViewActivity(device.id)}
+              className="mt-4 h-[52px] w-full rounded-2xl border border-primary bg-transparent text-[15px] font-semibold text-primary"
+            >
+              View Activity
+            </button>
           </div>
         );
       })}
