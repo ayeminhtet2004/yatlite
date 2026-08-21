@@ -5,9 +5,16 @@ import { useControlled } from "@/hooks/useControlled";
 export function ControlledApp({
   onHome,
   onChangeRole,
+  /** Presentational: this screen also offers the Guardian entry point. */
+  combined = false,
+  onGuardian,
+  onPairSuccess,
 }: {
   onHome: () => void;
   onChangeRole: () => void;
+  combined?: boolean;
+  onGuardian?: () => void;
+  onPairSuccess?: () => void;
 }) {
   const ctl = useControlled();
   const [code, setCode] = useState("");
