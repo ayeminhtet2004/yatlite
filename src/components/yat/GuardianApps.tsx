@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/yat/AppIcon";
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -119,9 +120,7 @@ export function GuardianApps({
             className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3"
           >
             <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-[15px] font-semibold text-foreground">
-                {app.app_name.charAt(0)}
-              </span>
+              <AppIcon appName={app.app_name} />
               <div className="min-w-0">
                 <p className="truncate text-[14px] font-semibold text-card-foreground">
                   {app.app_name}
