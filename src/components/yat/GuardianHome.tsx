@@ -277,7 +277,15 @@ export function GuardianHome({ onHome }: { onHome: () => void }) {
             )}
 
             {tab === "home" && guardianId && (
-              <GuardianDevices guardianId={guardianId} onPair={() => setTab("pair")} />
+              <GuardianDevices
+                guardianId={guardianId}
+                onPair={() => setTab("pair")}
+                onViewActivity={(id) => {
+                  setSelectedId(id);
+                  setOverlay(null);
+                  setTab("activity");
+                }}
+              />
             )}
 
             {tab === "pair" && guardianId && (
