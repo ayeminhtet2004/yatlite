@@ -5,9 +5,11 @@ import { deleteDevice, fetchDevices, isOnline, type DeviceRow } from "@/lib/yatA
 export function GuardianDevices({
   guardianId,
   onPair,
+  onViewActivity,
 }: {
   guardianId: string;
   onPair: () => void;
+  onViewActivity: (deviceId: string) => void;
 }) {
   const [devices, setDevices] = useState<DeviceRow[]>([]);
   const [loading, setLoading] = useState(true);
