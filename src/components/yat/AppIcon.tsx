@@ -8,7 +8,7 @@ export function AppIcon({
   appName,
   className,
 }: {
-  appName?: string | null;
+  appName?: string | null | undefined;
   className?: string;
 }) {
   const initial = (appName ?? "?").trim().charAt(0).toUpperCase() || "?";
