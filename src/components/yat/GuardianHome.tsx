@@ -23,11 +23,11 @@ import {
 } from "@/lib/yatApi";
 
 const NAV = [
-  { id: "home", label: "Home", glyph: "⌂" },
-  { id: "activity", label: "Activity", glyph: "◴" },
-  { id: "pair", label: "Pair", glyph: "+" },
-  { id: "apps", label: "Apps", glyph: "▦" },
-  { id: "rules", label: "Rules", glyph: "☑" },
+  { id: "home", label: "Home" },
+  { id: "activity", label: "Activity" },
+  { id: "pair", label: "Pair" },
+  { id: "apps", label: "Apps" },
+  { id: "rules", label: "Rules" },
 ];
 
 type Overlay = "notifications" | "rewards" | "subscription" | null;
