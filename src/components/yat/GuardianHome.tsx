@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Home, BarChart3, Plus, LayoutGrid, ListChecks } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { GuardianDevices } from "./GuardianDevices";
